@@ -1,6 +1,22 @@
 import express from 'express';
 import { db } from '../../lib/db.js'
 import { isManager } from '../login/authCheck.js'
+import path from 'path';
+import multer from 'multer';
+
+const FILE_PATH = 'Uploads/';   //파일 업로드 경로
+const upload = multer({ //파일 업로드를 위한 multer 설정
+    storage: multer.diskStorage({
+        destination(req, file, done){
+            done(null, FILE_PATH);
+        },
+        filename(req, file, done){
+            const ext = path.extname(file.originalname);
+            done(null, path.basename(file.originalname, ext) + ext);
+        },
+    }),
+    limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 /**입찰 정보를 보여주는 부분과 관련된 router */
 export const router = express.Router();
@@ -26,13 +42,25 @@ router.get('/:id', (req, res) => {  //특정 입찰의 코드 (id)를 받아 그
     }
 });
 
-router.post('/add_post', (req, res) => {
-    if(isManager(req, res)){
-        //post에 새로운 입찰 건을 추가하는 method
-    }
-    else{
-        res.send(`<script type="text/javascript">alert("권한이 없습니다."); 
-        document.location.href="/post";</script>`);
-    }
-});
+router.post('/add_post', upload.single('bid'), (req, res) => {  //공내역서를 업로드하는 미들웨어
+    console.log(req.file);
 
+    db.query('insert into biddata values (?, ?, ?)', [req.file.originalname, req.file.path, req.file.size], (err, data) => {    //DB에는 공내역서의 이름과 경로, 크기만 저장됨
+        if(err) console.error(err);
+
+        console.log(data);
+
+        return res.send(true);
+    });
+
+    }, 
+    // (req, res) => {
+    // if(true){
+    //     //post에 새로운 입찰 건을 추가하는 method
+    //     console.log(req);
+    // }
+    // else{
+    //     return res.send(`<script type="text/javascript">alert("권한이 없습니다."); 
+    //     document.location.href="/post";</script>`);
+    // }}
+);
