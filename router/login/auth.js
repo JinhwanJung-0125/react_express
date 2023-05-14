@@ -69,15 +69,16 @@ router.get('/logout', (req, res) => {   //로그아웃 시 세션 삭제
 });
 
 router.post('/register_process', (req, res) => {    //회원가입 프로세스
-    let username = req.body.ID;
+    let username = req.body.id;
     let password = req.body.password;
-    let password2 = req.body.password2;
 
-    if((username !== undefined || username !== '') && (password !== undefined || password !== '') && (password2 !== undefined || password2 !== '')){  //id, password, 확인용 password까지 다 작성했다면
+    console.log(username, password)
+
+    if(username !== undefined && password !== undefined){  //id, password 다 작성했다면
         db.query('select * from users where id = ?', [username], (err, result, field) => {    //같은 id를 가진 유저가 있는지 db에서 찾기
             if(err) throw err;
 
-            if(result.length <= 0 && password === password2){   //같은 id가 없고, password, 확인용 password가 맞으면
+            if(result.length <= 0){   //같은 id가 없으면
                 const hashed_password = bcrypt.hashSync(password, 15);  //password를 암호화하고 
 
                 db.query('insert into users (id, password) value (?, ?)', [username, hashed_password], (err2, data) => {   //db에 저장 회원가입 완료
@@ -87,9 +88,6 @@ router.post('/register_process', (req, res) => {    //회원가입 프로세스
 
                     return res.send(true);
                 });
-            }
-            else if(password !== password2){    //password, 확인용 password가 틀리면
-                return res.send(false);
             }
             else{   //중복되는 id가 있으면
                 return res.send(false);
