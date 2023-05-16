@@ -23,7 +23,7 @@ app.use(cors({
     origin: true,
     credentials: true,
 }));
-app.use(express.static(path.join(__dirname, 'front/build')));   //react 프로젝트의 build를 static으로 사용하게 함
+app.use(express.static(path.join(__dirname, 'Front/front/build')));   //react 프로젝트의 build를 static으로 사용하게 함
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 app.use(cookieParser(process.env.COOKIE_SECRET));
