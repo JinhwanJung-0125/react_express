@@ -21,6 +21,7 @@ router.post('/revised_test', (req, res) => {
     // let BalancedRate = req.body.BalancedRateNum;
     // let PersonalRate = req.body.PersonalRateNum;
     // 클라이언트로부터 받아야 할 정보들
+    console.log(req.body)
 
     let RadioDecimal = '1'
     let StandardPrice = '1'
@@ -34,6 +35,7 @@ router.post('/revised_test', (req, res) => {
     let PersonalRate = 0.2
 
     let bidName = req.body.bidName //어떤 입찰 건에 대한 BID인지 판단하기 위한 bidName (우선 사용자로부터 직접 파일 이름을 입력받음 추후 입력받지 않게 만들 예정)
+    res.send(true) //임시
 
     db.query('select bid_path from biddata where name = ?', [bidName], (err, result, field) => {
         //DB로부터 bidName에 대한 서버에 저장되어 있는 공내역서의 path를 조회

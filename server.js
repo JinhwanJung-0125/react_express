@@ -8,9 +8,9 @@ import dotenv from 'dotenv'
 import cors from 'cors'
 import { router as authRouter } from './router/login/auth.js'
 import { router as bidInfoRouter } from './router/bidInfo.js'
-// import { router as postRouter } from './router/post/post.js'
-// import { router as createBidRouter } from './router/create_bid/create_bid.js'
-// import { router as dataRouter } from './router/data/data.js'
+import { router as postRouter } from './router/post/post.js'
+import { router as createBidRouter } from './router/create_bid/create_bid.js'
+import { router as dataRouter } from './router/data/data.js'
 const __dirname = path.resolve()
 
 const app = express()
@@ -46,11 +46,11 @@ app.use(
 
 app.use('/auth', authRouter) //로그인, 회원 가입 등 인증 관련 처리 라우터
 
-// app.use('/post', postRouter) //공고 리스트 처리 라우터
+app.use('/post', postRouter) //공고 리스트 처리 라우터
 
-// app.use('/createBid', createBidRouter) //입찰서 작성 처리 라우터
+app.use('/createBid', createBidRouter) //입찰서 작성 처리 라우터
 
-// app.use('/data', dataRouter) //입찰서 데이터 관련 처리 라우터
+app.use('/data', dataRouter) //입찰서 데이터 관련 처리 라우터
 
 app.use('/bidInfo', bidInfoRouter)
 
