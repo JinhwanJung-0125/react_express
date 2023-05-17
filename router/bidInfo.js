@@ -2,7 +2,11 @@ import express, { response } from 'express'
 import axios from 'axios'
 export const router = express.Router()
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+
 const getBidData = async (url) => {
+    console.log(url)
+
     let res
     try {
         res = await axios.get(url)
@@ -11,9 +15,34 @@ const getBidData = async (url) => {
     }
     return res
 }
+const getTotalPage = async (res) => {
+    console.log(res.data.response.body.totalCount, 'totalN')
+
+    return Math.ceil(res.data.response.body.totalCount / 100)
+}
+
+const concatBidList = async (baseList, res) => {
+    console.log(res.data.response.body.pageNo)
+    let targetBidList = res.data.response.body.items.filter(
+        (bid) =>
+            bid.sucsfbidMthdNm ===
+                '추정가격 300억원미만 100억원 이상(종합심사, 간이형공사 *별표1-5)' ||
+            bid.sucsfbidMthdNm === '적격심사-추정가격 300억원미만 100억원이상'
+    )
+    console.log(targetBidList.length)
+    baseList = baseList.concat(targetBidList)
+    return baseList
+}
+const sortBidList = async (bidList) => {
+    const sorted_list = bidList.sort(function (a, b) {
+        return new Date(a.opengDt).getTime() - new Date(b.opengDt).getTime()
+    })
+    return sorted_list
+}
+
 const getBidList = async (request) => {
     let bidList = []
-    let row = '1'
+    let row = '100'
     let pageNum = '1'
     let today = '20230512'
     let due = '20230701'
@@ -22,42 +51,42 @@ const getBidList = async (request) => {
         row +
         '&pageNo=' +
         pageNum +
-        '&ServiceKey=2IkKF%2BDSdBvTw48wVks8riCqt%2FnTI2k3QbZoaEgCk%2FR05ZfMeDI%2FJiRA8FmGy6q30rCLNKmCRYMBWiY9Xm6aXQ%3D%3D&inqryDiv=2&inqryBgnDt=20220512&inqryEndDt=20220701&ntceInsttNm=%EC%A1%B0%EB%8B%AC%EC%B2%AD&type=json'
-    // let res
-    // try {
-    //     // console.log(bidList_url)
-    //     res = await axios.get(bidList_url)
-    // } catch (e) {
-    //     console.log(e)
-    // }
+        '&ServiceKey=2IkKF%2BDSdBvTw48wVks8riCqt%2FnTI2k3QbZoaEgCk%2FR05ZfMeDI%2FJiRA8FmGy6q30rCLNKmCRYMBWiY9Xm6aXQ%3D%3D&inqryDiv=2&inqryBgnDt=20230516&inqryEndDt=20230716&presmptPrceBgn=10000000000&presmptPrceEnd=30000000000&type=json'
     let res = await getBidData(bidList_url)
-    let totalPage = await Math.round(res.data.response.body.totalCount / 100)
-    row = 100
-    for (let i = 1; i <= totalPage; i++) {
+    bidList = await concatBidList(bidList, res)
+    let totalPage = await getTotalPage(res)
+    row = '100'
+    console.log(totalPage, 'total')
+    for (let i = 2; i <= totalPage; i++) {
         pageNum = i
-        // try {
-        //     res = await axios.get(bidList_url)
-        // } catch (e) {
-        //     console.log(e)
-        // }
-        res = await getBidData(bidList_url)
-        console.log(typeof res.data.body)
+        let bidList_url =
+            'https://apis.data.go.kr/1230000/BidPublicInfoService04/getBidPblancListInfoCnstwkPPSSrch01?numOfRows=' +
+            row +
+            '&pageNo=' +
+            pageNum +
+            '&ServiceKey=2IkKF%2BDSdBvTw48wVks8riCqt%2FnTI2k3QbZoaEgCk%2FR05ZfMeDI%2FJiRA8FmGy6q30rCLNKmCRYMBWiY9Xm6aXQ%3D%3D&inqryDiv=2&inqryBgnDt=20230516&inqryEndDt=20230716&presmptPrceBgn=10000000000&presmptPrceEnd=30000000000&type=json'
 
-        console.log(typeof res.data.body.items)
-        console.log(typeof res.data.body)
+        let res2 = await getBidData(bidList_url)
 
-        bidList = bidList.concat(res.data.body.items)
-        // var works = Setting.eleBID['T3'].map(function (work) {
-        //     return new Data()
-        // })
-        console.log(res.data.response.body.totalCount, pageNum)
+        bidList = await concatBidList(bidList, res2)
     }
+    const sortedBidList = await sortBidList(bidList)
 
-    return res
+    return sortedBidList
 }
+
 router.get('/', (req, res) => {
     getBidList(req).then((response) => {
-        console.log(response === undefined)
-        // res.send(response.addTrailers.response.body)
+        // console.log(response)
+        res.send(response)
+    })
+})
+
+router.get('/:bidId', (req, res) => {
+    getBidList(req).then((response) => {
+        let bidInfo = res.data.response.body.items.filter(
+            (bid) => bid.bidNtceNo === req.params.bidId
+        )
+        res.send(response)
     })
 })
