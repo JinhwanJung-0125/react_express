@@ -3,7 +3,7 @@ import axios from 'axios'
 export const router = express.Router()
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
-
+//데이터 베이스에 저장? 혹은 json파일로 저장 후 요청시마다 전달?
 const getBidData = async (url) => {
     console.log(url)
 
