@@ -36,6 +36,8 @@ router.post('/revised_test', (req, res, next) => {    //간이종심제 Bid 만�
             //공내역서를 복사해 작업 폴더로 옳김
             fs.copyFileSync(folder_path + "\\" + result[0].bidPath, revised_test_EmptyBid + "\\" + bidName + ".BID");
 
+            console.log("-----------------------------------")
+
             //사용자가 입력한 대로 입찰서 작성
             execute_revised(RadioDecimal, StandardPrice, WeightValue, CAD_Click, Ceiling_Click, LaborCost_Click, CompanyName, CompanyNum, BalancedRate, PersonalRate);
 
