@@ -8,10 +8,10 @@ import fs from 'fs';
 const FILE_PATH = 'Uploads/';   //파일 업로드 경로
 const upload = multer({ //파일 업로드를 위한 multer 설정
     storage: multer.diskStorage({
-        destination(req, file, done){
+        destination(req, file, done) {
             done(null, FILE_PATH);
         },
-        filename(req, file, done){
+        filename(req, file, done) {
             const ext = path.extname(file.originalname);
             done(null, path.basename(file.originalname, ext) + ext);
         },
@@ -22,9 +22,9 @@ const upload = multer({ //파일 업로드를 위한 multer 설정
 /**입찰 정보를 보여주는 부분과 관련된 router */
 export const router = express.Router();
 
-router.get('/', (req, res) => { //등록된 입찰 정보를 보내줌
+router.get('/', (req, res, next) => { //등록된 입찰 정보를 보내줌
     db.query('select constName, bidID from emptybid', (err, data, field) => {
-        if(err) throw err;
+        if (err) next(err);
 
         res.send(data);
     });
@@ -48,22 +48,22 @@ router.post('/add_file', upload.fields([{ name: 'file' }, { name: 'data' }]), (r
 
     constName = JSON.parse(constName.toString())[0].constName;  //blob 파일로부터 공사 명 추출
 
-    let bidId = (req.files.file[0].originalname).replace(/[^0-9 | -]+/,""); //파일 이름에서 bid id 추출
+    let bidId = (req.files.file[0].originalname).replace(/[^0-9 | -]+/, ""); //파일 이름에서 bid id 추출
 
     db.query('insert into emptybid values (?, ?, ?, ?)', [constName, bidId, req.files.file[0].path, req.files.file[0].size], (err, data) => {    //DB에는 공사명, 공내역서의 id와 경로, 크기만 저장됨
-        if(err !== null) return res.send(false); //db에러
+        if (err !== null) return res.send(false); //db에러
 
         fs.rmSync(req.files.data[0].path);  //blob파일 삭제
 
-        if(data.affectedRows === 1){    //db에 저장이 됬다면
+        if (data.affectedRows === 1) {    //db에 저장이 됬다면
             return res.send(true);
         }
-        else{   //저장이 안됬다면
+        else {   //저장이 안됬다면
             return res.send(false);
         }
     });
 
-    }, 
+},
     // (req, res) => {
     // if(true){
     //     //post에 새로운 입찰 건을 추가하는 method
