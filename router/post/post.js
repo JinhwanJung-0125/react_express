@@ -23,10 +23,10 @@ const upload = multer({
 /**입찰 정보를 보여주는 부분과 관련된 router */
 export const router = express.Router()
 
-router.get('/', (req, res) => {
+router.get('/', (req, res, next) => {
     //등록된 입찰 정보를 보내줌
     db.query('select constName, bidID from emptybid', (err, data, field) => {
-        if (err) throw err
+        if (err) next(err)
 
         res.send(data)
     })

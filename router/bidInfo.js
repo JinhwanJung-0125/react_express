@@ -1,5 +1,7 @@
 import express, { response } from 'express'
 import axios from 'axios'
+import fs from 'fs'
+import path from 'path'
 export const router = express.Router()
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
@@ -31,6 +33,7 @@ const concatBidList = async (baseList, res) => {
     )
     console.log(targetBidList.length)
     baseList = baseList.concat(targetBidList)
+
     return baseList
 }
 const sortBidList = async (bidList) => {
@@ -40,18 +43,31 @@ const sortBidList = async (bidList) => {
     return sorted_list
 }
 
+const getDate = () => {
+    let date = new Date()
+    let today = date.toISOString().substring(0, 10).replace(/-/g, '')
+
+    let endDate = new Date(date.setDate(date.getDate() + 30))
+    let endDay = endDate.toISOString().substring(0, 10).replace(/-/g, '')
+    console.log(today, endDay)
+    return { today, endDay }
+}
+
 const getBidList = async (request) => {
     let bidList = []
     let row = '100'
     let pageNum = '1'
-    let today = '20230512'
-    let due = '20230701'
+    let { today, endDay } = getDate()
     let bidList_url =
         'https://apis.data.go.kr/1230000/BidPublicInfoService04/getBidPblancListInfoCnstwkPPSSrch01?numOfRows=' +
         row +
         '&pageNo=' +
         pageNum +
-        '&ServiceKey=2IkKF%2BDSdBvTw48wVks8riCqt%2FnTI2k3QbZoaEgCk%2FR05ZfMeDI%2FJiRA8FmGy6q30rCLNKmCRYMBWiY9Xm6aXQ%3D%3D&inqryDiv=2&inqryBgnDt=20230516&inqryEndDt=20230716&presmptPrceBgn=10000000000&presmptPrceEnd=30000000000&type=json'
+        '&ServiceKey=2IkKF%2BDSdBvTw48wVks8riCqt%2FnTI2k3QbZoaEgCk%2FR05ZfMeDI%2FJiRA8FmGy6q30rCLNKmCRYMBWiY9Xm6aXQ%3D%3D&inqryDiv=2&inqryBgnDt=' +
+        today +
+        '&inqryEndDt=' +
+        endDay +
+        '&presmptPrceBgn=10000000000&presmptPrceEnd=30000000000&type=json'
     let res = await getBidData(bidList_url)
     bidList = await concatBidList(bidList, res)
     let totalPage = await getTotalPage(res)
@@ -64,7 +80,11 @@ const getBidList = async (request) => {
             row +
             '&pageNo=' +
             pageNum +
-            '&ServiceKey=2IkKF%2BDSdBvTw48wVks8riCqt%2FnTI2k3QbZoaEgCk%2FR05ZfMeDI%2FJiRA8FmGy6q30rCLNKmCRYMBWiY9Xm6aXQ%3D%3D&inqryDiv=2&inqryBgnDt=20230516&inqryEndDt=20230716&presmptPrceBgn=10000000000&presmptPrceEnd=30000000000&type=json'
+            '&ServiceKey=2IkKF%2BDSdBvTw48wVks8riCqt%2FnTI2k3QbZoaEgCk%2FR05ZfMeDI%2FJiRA8FmGy6q30rCLNKmCRYMBWiY9Xm6aXQ%3D%3D&inqryDiv=2&inqryBgnDt=' +
+            today +
+            '&inqryEndDt=' +
+            endDay +
+            '&presmptPrceBgn=10000000000&presmptPrceEnd=30000000000&type=json'
 
         let res2 = await getBidData(bidList_url)
 
@@ -72,14 +92,27 @@ const getBidList = async (request) => {
     }
     const sortedBidList = await sortBidList(bidList)
 
+    let folder = path.resolve(path.resolve(), './bidList') //경로 재확인
+    fs.writeFileSync(folder + '\\' + today + '_bidList', JSON.stringify(sortedBidList))
+
     return sortedBidList
 }
 
 router.get('/', (req, res) => {
-    getBidList(req).then((response) => {
-        // console.log(response)
-        res.send(response)
-    })
+    console.log(path.resolve(path.resolve(), './bidList'))
+    let { today, endDay } = getDate()
+    let bidList = fs.readFileSync(
+        path.resolve(path.resolve(), './bidList') + '\\' + today + '_bidList'
+    )
+    // console.log()
+    if (bidList == undefined) {
+        getBidList(req).then((response) => {
+            // console.log(response)
+            res.send(response)
+        })
+    } else {
+        res.send(bidList)
+    }
 })
 
 router.get('/:bidId', (req, res) => {

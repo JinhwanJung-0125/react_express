@@ -63,6 +63,8 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '/front/build/index.html')) //react 프로젝트의 index.html을 root로 사용함
 })
 
+app.use('/bidInfo', bidInfoRouter) //공공API로 입찰 정보 가져오는 라우터
+
 app.use((req, res) => {
     res.status(404).send('404 Not Found') //404 에러 처리 미들웨어
 })
