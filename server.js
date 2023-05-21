@@ -12,7 +12,6 @@ import { router as createBidRouter } from './router/create_bid/create_bid.js'
 import { router as dataRouter } from './router/data/data.js'
 import { router as bidListRouter } from './router/created_bid_list/created_bid_list.js'
 import { router as bidInfoRouter } from './router/bidInfo.js'
-
 const __dirname = path.resolve()
 
 const app = express()
@@ -62,8 +61,6 @@ app.get('*', (req, res) => {
     //어떤 접속이 오든 접속 시 index.html을 보내준다.
     res.sendFile(path.join(__dirname, '/front/build/index.html')) //react 프로젝트의 index.html을 root로 사용함
 })
-
-app.use('/bidInfo', bidInfoRouter) //공공API로 입찰 정보 가져오는 라우터
 
 app.use((req, res) => {
     res.status(404).send('404 Not Found') //404 에러 처리 미들웨어

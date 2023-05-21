@@ -43,6 +43,7 @@ const sortBidList = async (bidList) => {
     return sorted_list
 }
 
+//오늘 날짜, 30일 뒤 날짜 yyyymmdd 형식으로 반환
 const getDate = () => {
     let date = new Date()
     let today = date.toISOString().substring(0, 10).replace(/-/g, '')
@@ -92,7 +93,8 @@ const getBidList = async (request) => {
     }
     const sortedBidList = await sortBidList(bidList)
 
-    let folder = path.resolve(path.resolve(), './bidList') //경로 재확인
+    //bidList JSON 파일로 저장
+    let folder = path.resolve(path.resolve(), './bidList')
     fs.writeFileSync(folder + '\\' + today + '_bidList', JSON.stringify(sortedBidList))
 
     return sortedBidList
@@ -104,13 +106,13 @@ router.get('/', (req, res) => {
     let bidList = fs.readFileSync(
         path.resolve(path.resolve(), './bidList') + '\\' + today + '_bidList'
     )
-    // console.log()
     if (bidList == undefined) {
+        //오늘자 bidList 데이터가 없다면 새로 req
         getBidList(req).then((response) => {
-            // console.log(response)
             res.send(response)
         })
     } else {
+        //오늘자 bidList 데이터가 있다면 바로 res
         res.send(bidList)
     }
 })
