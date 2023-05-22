@@ -100,28 +100,51 @@ const getBidList = async (request) => {
     return sortedBidList
 }
 
+//오늘자 bidList 없을시 오류->try catch 사용하는 것으로 수정-5/22
 router.get('/', (req, res) => {
-    console.log(path.resolve(path.resolve(), './bidList'))
+    // console.log(path.resolve(path.resolve(), './bidList'))
     let { today, endDay } = getDate()
-    let bidList = fs.readFileSync(
-        path.resolve(path.resolve(), './bidList') + '\\' + today + '_bidList'
-    )
-    if (bidList == undefined) {
-        //오늘자 bidList 데이터가 없다면 새로 req
-        getBidList(req).then((response) => {
-            res.send(response)
-        })
-    } else {
-        //오늘자 bidList 데이터가 있다면 바로 res
+    try {
+        let bidList = fs.readFileSync(
+            path.resolve(path.resolve(), './bidList') + '\\' + today + '_bidList',
+            'utf-8'
+            //오늘자 bidList 데이터가 있다면 바로 res
+        )
         res.send(bidList)
+    } catch (e) {
+        if (e.code === 'ENOENT') {
+            //오늘자 bidList 데이터가 없다면 새로 req
+            getBidList(req).then((response) => {
+                res.send(response)
+            })
+        }
     }
 })
 
+//오늘자 bidList 없을시 오류->try catch 사용하는 것으로 수정-5/22
 router.get('/:bidId', (req, res) => {
-    getBidList(req).then((response) => {
-        let bidInfo = res.data.response.body.items.filter(
-            (bid) => bid.bidNtceNo === req.params.bidId
+    let { today, endDay } = getDate()
+
+    try {
+        let bidList = fs.readFileSync(
+            path.resolve(path.resolve(), './bidList') + '\\' + today + '_bidList',
+            'utf-8'
         )
-        res.send(response)
-    })
+        bidList = JSON.parse(bidList)
+        let bidInfo = bidList.filter((bid) => bid.bidNtceNo === req.params.bidId)
+        res.send(bidInfo[0])
+    } catch (e) {
+        //오늘자 bidList 데이터가 없다면 새로 req
+        if (e.code === 'ENOENT') {
+            getBidList(req).then((response) => {
+                let bidInfo = response.filter((bid) => bid.bidNtceNo === req.params.bidId)
+                res.send(bidInfo[0])
+            })
+        }
+    }
+    if (bidList == undefined) {
+    } else {
+        //오늘자 bidList 데이터가 있다면 바로 res
+        console.log(typeof bidList)
+    }
 })
