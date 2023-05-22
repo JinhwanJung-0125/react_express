@@ -1,5 +1,7 @@
 import express, { response } from 'express'
 import axios from 'axios'
+import fs from 'fs'
+import path from 'path'
 export const router = express.Router()
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
@@ -26,11 +28,12 @@ const concatBidList = async (baseList, res) => {
     let targetBidList = res.data.response.body.items.filter(
         (bid) =>
             bid.sucsfbidMthdNm ===
-            '추정가격 300억원미만 100억원 이상(종합심사, 간이형공사 *별표1-5)' ||
+                '추정가격 300억원미만 100억원 이상(종합심사, 간이형공사 *별표1-5)' ||
             bid.sucsfbidMthdNm === '적격심사-추정가격 300억원미만 100억원이상'
     )
     console.log(targetBidList.length)
     baseList = baseList.concat(targetBidList)
+
     return baseList
 }
 const sortBidList = async (bidList) => {
@@ -40,18 +43,32 @@ const sortBidList = async (bidList) => {
     return sorted_list
 }
 
+//오늘 날짜, 30일 뒤 날짜 yyyymmdd 형식으로 반환
+const getDate = () => {
+    let date = new Date()
+    let today = date.toISOString().substring(0, 10).replace(/-/g, '')
+
+    let endDate = new Date(date.setDate(date.getDate() + 30))
+    let endDay = endDate.toISOString().substring(0, 10).replace(/-/g, '')
+    console.log(today, endDay)
+    return { today, endDay }
+}
+
 const getBidList = async (request) => {
     let bidList = []
     let row = '100'
     let pageNum = '1'
-    let today = '20230512'
-    let due = '20230701'
+    let { today, endDay } = getDate()
     let bidList_url =
         'https://apis.data.go.kr/1230000/BidPublicInfoService04/getBidPblancListInfoCnstwkPPSSrch01?numOfRows=' +
         row +
         '&pageNo=' +
         pageNum +
-        '&ServiceKey=2IkKF%2BDSdBvTw48wVks8riCqt%2FnTI2k3QbZoaEgCk%2FR05ZfMeDI%2FJiRA8FmGy6q30rCLNKmCRYMBWiY9Xm6aXQ%3D%3D&inqryDiv=2&inqryBgnDt=20230516&inqryEndDt=20230716&presmptPrceBgn=10000000000&presmptPrceEnd=30000000000&type=json'
+        '&ServiceKey=2IkKF%2BDSdBvTw48wVks8riCqt%2FnTI2k3QbZoaEgCk%2FR05ZfMeDI%2FJiRA8FmGy6q30rCLNKmCRYMBWiY9Xm6aXQ%3D%3D&inqryDiv=2&inqryBgnDt=' +
+        today +
+        '&inqryEndDt=' +
+        endDay +
+        '&presmptPrceBgn=10000000000&presmptPrceEnd=30000000000&type=json'
     let res = await getBidData(bidList_url)
     bidList = await concatBidList(bidList, res)
     let totalPage = await getTotalPage(res)
@@ -64,7 +81,11 @@ const getBidList = async (request) => {
             row +
             '&pageNo=' +
             pageNum +
-            '&ServiceKey=2IkKF%2BDSdBvTw48wVks8riCqt%2FnTI2k3QbZoaEgCk%2FR05ZfMeDI%2FJiRA8FmGy6q30rCLNKmCRYMBWiY9Xm6aXQ%3D%3D&inqryDiv=2&inqryBgnDt=20230516&inqryEndDt=20230716&presmptPrceBgn=10000000000&presmptPrceEnd=30000000000&type=json'
+            '&ServiceKey=2IkKF%2BDSdBvTw48wVks8riCqt%2FnTI2k3QbZoaEgCk%2FR05ZfMeDI%2FJiRA8FmGy6q30rCLNKmCRYMBWiY9Xm6aXQ%3D%3D&inqryDiv=2&inqryBgnDt=' +
+            today +
+            '&inqryEndDt=' +
+            endDay +
+            '&presmptPrceBgn=10000000000&presmptPrceEnd=30000000000&type=json'
 
         let res2 = await getBidData(bidList_url)
 
@@ -72,14 +93,28 @@ const getBidList = async (request) => {
     }
     const sortedBidList = await sortBidList(bidList)
 
+    //bidList JSON 파일로 저장
+    let folder = path.resolve(path.resolve(), './bidList')
+    fs.writeFileSync(folder + '\\' + today + '_bidList', JSON.stringify(sortedBidList))
+
     return sortedBidList
 }
 
 router.get('/', (req, res) => {
-    getBidList(req).then((response) => {
-        // console.log(response)
-        res.send(response)
-    })
+    console.log(path.resolve(path.resolve(), './bidList'))
+    let { today, endDay } = getDate()
+    let bidList = fs.readFileSync(
+        path.resolve(path.resolve(), './bidList') + '\\' + today + '_bidList'
+    )
+    if (bidList == undefined) {
+        //오늘자 bidList 데이터가 없다면 새로 req
+        getBidList(req).then((response) => {
+            res.send(response)
+        })
+    } else {
+        //오늘자 bidList 데이터가 있다면 바로 res
+        res.send(bidList)
+    }
 })
 
 router.get('/:bidId', (req, res) => {
