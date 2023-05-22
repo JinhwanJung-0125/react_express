@@ -92,7 +92,7 @@ router.post('/register_process', (req, res) => {
 
             if (result.length <= 0) {
                 //같은 id가 없으면
-                const hashed_password = bcrypt.hashSync(password, 15) //password를 암호화하고
+                const hashed_password = bcrypt.hashSync(password, 10) //password를 암호화하고
 
                 db.query(
                     'insert into users (id, password) value (?, ?)',

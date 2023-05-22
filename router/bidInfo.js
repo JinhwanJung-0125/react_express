@@ -28,7 +28,7 @@ const concatBidList = async (baseList, res) => {
     let targetBidList = res.data.response.body.items.filter(
         (bid) =>
             bid.sucsfbidMthdNm ===
-                '추정가격 300억원미만 100억원 이상(종합심사, 간이형공사 *별표1-5)' ||
+            '추정가격 300억원미만 100억원 이상(종합심사, 간이형공사 *별표1-5)' ||
             bid.sucsfbidMthdNm === '적격심사-추정가격 300억원미만 100억원이상'
     )
     console.log(targetBidList.length)
@@ -103,22 +103,33 @@ const getBidList = async (request) => {
 router.get('/', (req, res) => {
     console.log(path.resolve(path.resolve(), './bidList'))
     let { today, endDay } = getDate()
-    let bidList = fs.readFileSync(
-        path.resolve(path.resolve(), './bidList') + '\\' + today + '_bidList'
-    )
-    if (bidList == undefined) {
-        //오늘자 bidList 데이터가 없다면 새로 req
-        getBidList(req).then((response) => {
-            res.send(response)
-        })
-    } else {
-        //오늘자 bidList 데이터가 있다면 바로 res
-        res.send(bidList)
+
+    try {
+        let bidList = fs.readFileSync(
+            path.resolve(path.resolve(), './bidList') + '\\' + today + '_bidList'
+        );
+
+        return res.send(bidList)
     }
+    catch (err) {
+        getBidList(req).then((response) => {
+            return res.send(response)
+        })
+    }
+    // if (bidList == undefined) {
+    //     //오늘자 bidList 데이터가 없다면 새로 req
+    //     getBidList(req).then((response) => {
+    //         return res.send(response)
+    //     })
+    // } else {
+    //오늘자 bidList 데이터가 있다면 바로 res
+    // return res.send(bidList)
+    // }
 })
 
 router.get('/:bidId', (req, res) => {
     getBidList(req).then((response) => {
+        console.log(res)
         let bidInfo = res.data.response.body.items.filter(
             (bid) => bid.bidNtceNo === req.params.bidId
         )
