@@ -62,9 +62,9 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../React-Project/build/index.html')) //react 프로젝트의 index.html을 root로 사용함
 })
 
-app.use((req, res) => {
-    res.status(404).send('404 Not Found') //404 에러 처리 미들웨어
-})
+// app.use((req, res) => {
+//     res.status(404).send('404 Not Found') //404 에러 처리 미들웨어
+// })
 
 app.use((err, req, res, next) => {
     console.error(err)

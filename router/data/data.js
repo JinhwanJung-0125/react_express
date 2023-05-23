@@ -9,28 +9,18 @@ const folder_path = path.resolve('') //현재 파일이 속한 폴더의 상위 
 export const router = express.Router()
 
 router.all('/download/:bidPath', (req, res, next) => {
-    if (!fs.existsSync(folder_path + '\\' + req.session.nickname + '\\' + req.params.bidPath)) {
-        //먼저, 서버에 요구하는 파일이 있는지 확인
-        console.log('Fail')
-        res.send(false)
+    if (!fs.existsSync(folder_path + '\\' + req.session.nickname + '\\' + req.params.bidPath)) {    //먼저, 서버에 요구하는 파일이 있는지 확인
+        res.send({ isSuccess: false, value: "서버에 파일 없음" });
     } else {
-        db.query(
-            'select bidPath, bidID from userbidfiles where bidPath = ?',
-            [req.params.bidPath],
-            (err, result, field) => {
-                //요구하는 파일 위치와 bidID를 DB에서 조회
-                if (err) console.error(err)
+        db.query('select bidPath, bidID from userbidfiles where bidPath = ?', [req.params.bidPath], (err, result, field) => {    //요구하는 파일 위치와 bidID를 DB에서 조회
+            if (err) next(err);
 
-                if (result.length > 0) {
-                    const file =
-                        folder_path + '\\' + req.session.nickname + '\\' + result[0].bidPath //요구하는 파일의 위치
-
-                    console.log('Success')
-                    res.download(file, result[0].bidID + '.BID') //다운로드를 보냄
-                } else {
-                    res.send(false)
-                }
+            if (result.length > 0) {
+                const file = folder_path + '\\' + req.session.nickname + '\\' + result[0].bidPath; //요구하는 파일의 위치
+                res.download(file, result[0].bidID + '.BID'); //다운로드를 보냄
+            } else {
+                res.send({ isSuccess: false, value: "DB에 파일 위치 없음" });
             }
-        )
+        })
     }
 })

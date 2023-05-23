@@ -5,7 +5,7 @@ import { db } from '../../lib/db.js'
 /**로그인, 로그아웃, 회원가입 등과 관련된 router */
 export const router = express.Router()
 
-router.post('/login_process', (req, res) => {
+router.post('/login_process', (req, res, next) => {
     //로그인 프로세스
     console.log('로그인 프로세스 실행' + req.body.ID + req.body.password)
     let username = req.body.ID
@@ -15,7 +15,7 @@ router.post('/login_process', (req, res) => {
         //id, password 둘 다 제대로 받았으면 유저 정보에서 찾기
         db.query('select * from users where id = ?', [username], (err, result, field) => {
             //db에 유저 검색
-            if (err) err //db 오류
+            if (err) next(err) //db 오류
 
             if (result.length > 0) {
                 //결과를 찾았다면
@@ -28,14 +28,14 @@ router.post('/login_process', (req, res) => {
                         req.session.nickname = username
                         req.session.save(() => {
                             //맞으면 세션 정보 수정 후 저장
-                            return res.send(true) //수정?
+                            return res.send({ isSuccess: true });
                         })
                     } else {
-                        return res.send(false) //password가 안맞으면 false
+                        return res.send({ isSuccess: false }); //password가 안맞으면 false
                     }
                 })
             } else {
-                return res.send(false) //id가 없으면 false
+                return res.send({ isSuccess: false }); //id가 없으면 false
             }
         })
 
@@ -65,7 +65,7 @@ router.post('/login_process', (req, res) => {
         //결과를 찾지 못했다면
     } else {
         //id, password 둘 중 하나라도 빠졌다면
-        return res.send(false)
+        return res.send({ isSuccess: false, value: "누락된 정보 있음" });
     }
 })
 
@@ -77,7 +77,7 @@ router.get('/logout', (req, res) => {
     })
 })
 
-router.post('/register_process', (req, res) => {
+router.post('/register_process', (req, res, next) => {
     //회원가입 프로세스
     let username = req.body.id
     let password = req.body.password
@@ -88,32 +88,27 @@ router.post('/register_process', (req, res) => {
         //id, password 다 작성했다면
         db.query('select * from users where id = ?', [username], (err, result, field) => {
             //같은 id를 가진 유저가 있는지 db에서 찾기
-            if (err) throw err
+            if (err) next(err);
 
             if (result.length <= 0) {
                 //같은 id가 없으면
                 const hashed_password = bcrypt.hashSync(password, 10) //password를 암호화하고
 
-                db.query(
-                    'insert into users (id, password) value (?, ?)',
-                    [username, hashed_password],
-                    (err2, data) => {
-                        //db에 저장 회원가입 완료
-                        if (err2) throw err2
+                db.query('insert into users (id, password) value (?, ?)', [username, hashed_password], (err2, data) => {
+                    //db에 저장 회원가입 완료
+                    if (err2) next(err2);
 
-                        console.log(data)
-
-                        return res.send(true)
-                    }
+                    return res.send({ isSuccess: true });
+                }
                 )
             } else {
                 //중복되는 id가 있으면
-                return res.send(false)
+                return res.send({ isSuccess: false, value: "중복된 ID가 있음" });
             }
         })
     } else {
         //누락된 정보가 있다면
-        return res.send(false)
+        return res.send({ isSuccess: false, value: "누락된 정보 있음" });
     }
 })
 

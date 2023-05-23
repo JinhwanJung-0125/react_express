@@ -17,6 +17,7 @@ const getBidData = async (url) => {
     }
     return res
 }
+
 const getTotalPage = async (res) => {
     console.log(res.data.response.body.totalCount, 'totalN')
 
@@ -24,7 +25,6 @@ const getTotalPage = async (res) => {
 }
 
 const concatBidList = async (baseList, res) => {
-    console.log(res.data.response.body.pageNo)
     let targetBidList = res.data.response.body.items.filter(
         (bid) =>
             bid.sucsfbidMthdNm ===
@@ -36,6 +36,7 @@ const concatBidList = async (baseList, res) => {
 
     return baseList
 }
+
 const sortBidList = async (bidList) => {
     const sorted_list = bidList.sort(function (a, b) {
         return new Date(a.opengDt).getTime() - new Date(b.opengDt).getTime()
@@ -129,10 +130,9 @@ router.get('/', (req, res) => {
 
 router.get('/:bidId', (req, res) => {
     getBidList(req).then((response) => {
-        console.log(res)
-        let bidInfo = res.data.response.body.items.filter(
+        let bidInfo = response.filter(
             (bid) => bid.bidNtceNo === req.params.bidId
         )
-        res.send(response)
+        res.send(bidInfo)
     })
 })
