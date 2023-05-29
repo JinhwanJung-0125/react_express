@@ -17,6 +17,7 @@ const getBidData = async (url) => {
     }
     return res
 }
+
 const getTotalPage = async (res) => {
     console.log(res.data.response.body.totalCount, 'totalN')
 
@@ -24,11 +25,10 @@ const getTotalPage = async (res) => {
 }
 
 const concatBidList = async (baseList, res) => {
-    console.log(res.data.response.body.pageNo)
     let targetBidList = res.data.response.body.items.filter(
         (bid) =>
             bid.sucsfbidMthdNm ===
-                '추정가격 300억원미만 100억원 이상(종합심사, 간이형공사 *별표1-5)' ||
+            '추정가격 300억원미만 100억원 이상(종합심사, 간이형공사 *별표1-5)' ||
             bid.sucsfbidMthdNm === '적격심사-추정가격 300억원미만 100억원이상'
     )
     console.log(targetBidList.length)
@@ -36,6 +36,7 @@ const concatBidList = async (baseList, res) => {
 
     return baseList
 }
+
 const sortBidList = async (bidList) => {
     const sorted_list = bidList.sort(function (a, b) {
         return new Date(a.opengDt).getTime() - new Date(b.opengDt).getTime()
@@ -119,6 +120,15 @@ router.get('/', (req, res) => {
             })
         }
     }
+    // if (bidList == undefined) {
+    //     //오늘자 bidList 데이터가 없다면 새로 req
+    //     getBidList(req).then((response) => {
+    //         return res.send(response)
+    //     })
+    // } else {
+    //오늘자 bidList 데이터가 있다면 바로 res
+    // return res.send(bidList)
+    // }
 })
 
 //오늘자 bidList 없을시 오류->try catch 사용하는 것으로 수정-5/22
