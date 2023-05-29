@@ -1,5 +1,5 @@
 import express from 'express'
-// import { db } from '../../lib/db.js';
+import { db } from '../../lib/db.js'
 
 /**사용자가 작성한 입찰서 리스트와 관련된 router */
 export const router = express.Router()
