@@ -10,7 +10,7 @@ router.get('/:id', (req, res, next) => {
         'select bidPath, bidID from userBidFiles where userID = ? and bidID = ?',
         [req.session.nickname, req.params.id],
         (err, data, field) => {
-            if (err) next(err)
+            if (err) return next(err)
 
             return res.send(data)
         }

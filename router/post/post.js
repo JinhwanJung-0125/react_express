@@ -48,7 +48,7 @@ router.get('/', (req, res) => {
 router.post(
     '/add_file',
     upload.fields([{ name: 'file' }, { name: 'data' }]),
-    (req, res) => {
+    (req, res, next) => {
         //공내역서를 업로드하는 미들웨어
         let constName = fs.readFileSync(req.files.data[0].path)
 
@@ -61,19 +61,16 @@ router.post(
             [constName, bidId, req.files.file[0].path, req.files.file[0].size],
             (err, data) => {
                 //DB에는 공사명, 공내역서의 id와 경로, 크기만 저장됨
-                if (err !== null) {
-                    // console.log(err)
-                    return res.send(false)
-                } //db에러
+                if (err) return next(err) //db에러
 
                 fs.rmSync(req.files.data[0].path) //blob파일 삭제
 
                 if (data.affectedRows === 1) {
                     //db에 저장이 됬다면
-                    return res.send(true)
+                    return res.send({ isSuccess: true })
                 } else {
                     //저장이 안됬다면
-                    return res.send(false)
+                    return res.send({ isSuccess: false, value: 'DB에 저장되지 않음' })
                 }
             }
         )

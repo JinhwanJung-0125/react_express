@@ -7,7 +7,7 @@ export const router = express.Router()
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 //데이터 베이스에 저장? 혹은 json파일로 저장 후 요청시마다 전달?
 const getBidData = async (url) => {
-    console.log(url)
+    // console.log('a')
     let res
     try {
         res = await axios.get(url)
@@ -16,7 +16,9 @@ const getBidData = async (url) => {
     }
     return res
 }
+
 const getTotalPage = async (res) => {
+    // console.log('c')
     return Math.ceil(res.data.response.body.totalCount / 100)
 }
 
@@ -27,11 +29,14 @@ const concatBidList = async (baseList, res) => {
                 '추정가격 300억원미만 100억원 이상(종합심사, 간이형공사 *별표1-5)' ||
             bid.sucsfbidMthdNm === '적격심사-추정가격 300억원미만 100억원이상'
     )
-    console.log(targetBidList.length)
+    // console.log('b')
+
+    // console.log(targetBidList.length)
     baseList = baseList.concat(targetBidList)
 
     return baseList
 }
+
 const sortBidList = async (bidList) => {
     const sortedList = bidList.sort(function (a, b) {
         return new Date(a.opengDt).getTime() - new Date(b.opengDt).getTime()
@@ -52,7 +57,7 @@ const deleteDuplication = async (bidList) => {
     let resultList = bidList.filter((bid, index) => {
         return (
             bidList.findIndex((e) => {
-                console.log(bid.bidNtceNm, e.bidNtceNm)
+                // console.log(bid.bidNtceNm, e.bidNtceNm)
                 return bid.bidNtceNm === e.bidNtceNm
             }) === index
         )
@@ -67,7 +72,7 @@ const getDate = () => {
 
     let endDate = new Date(date.setDate(date.getDate() + 30))
     let endDay = endDate.toISOString().substring(0, 10).replace(/-/g, '')
-    console.log(today, endDay)
+    // console.log(today, endDay)
     return { today, endDay }
 }
 
@@ -90,7 +95,7 @@ const getBidList = async (request) => {
     bidList = await concatBidList(bidList, res)
     let totalPage = await getTotalPage(res)
     row = '100'
-    console.log(totalPage, 'total')
+    // console.log(totalPage, 'total')
     for (let i = 2; i <= totalPage; i++) {
         pageNum = i
         let bidList_url =
@@ -126,7 +131,7 @@ router.get('/', (req, res) => {
     // console.log(path.resolve(path.resolve(), './bidList'))
     let { today, endDay } = getDate()
     try {
-        console.log('ttt')
+        // console.log('t')
 
         let bidList = fs.readFileSync(
             path.resolve(path.resolve(), './bidList') + '\\' + today + '_bidList',
@@ -137,7 +142,7 @@ router.get('/', (req, res) => {
         res.send(bidList)
     } catch (e) {
         if (e.code === 'ENOENT') {
-            console.log('ttt')
+            // console.log('c')
 
             //오늘자 bidList 데이터가 없다면 새로 req
             getBidList(req).then((response) => {
@@ -169,10 +174,10 @@ router.get('/:bidId', (req, res) => {
         let bidInfo = bidList.filter((bid) => bid.bidNtceNo === req.params.bidId)
         getBasePrice(req.params.bidId).then((basePrice) => {
             if (basePrice.data.response.body.items === undefined) {
-                console.log()
+                // console.log()
                 res.send({ bidData: bidInfo[0], basePriceData: false })
             } else {
-                console.log(basePrice.data.response.body.items)
+                // console.log(basePrice.data.response.body.items)
                 res.send({
                     bidData: bidInfo[0],
                     basePriceData: basePrice.data.response.body.items[0],
@@ -185,7 +190,7 @@ router.get('/:bidId', (req, res) => {
             getBidList(req).then((response) => {
                 let bidInfo = response.filter((bid) => bid.bidNtceNo === req.params.bidId)
                 getBasePrice(req.params.bidId).then((basePrice) => {
-                    console.log(basePrice, '기초 금액 데이터')
+                    // console.log(basePrice, '기초 금액 데이터')
                     res.send({ bidData: bidInfo[0], basePriceData: basePrice })
                 })
             })

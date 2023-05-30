@@ -1,7 +1,7 @@
 import express from 'express'
 import pkg_revised from '../../../BidHandling_CalculatePrice/execute.js'
 const { execute: execute_revised } = pkg_revised
-import pkg_eligible from '../../../CMC_Project_EliglbleAudit_Converted/excute.js'
+import pkg_eligible from '../../../CMC_Project_EliglbleAudit_Converted-master/excute.js'
 const { execute: execute_eligible } = pkg_eligible
 import { db } from '../../lib/db.js'
 import fs from 'fs'
@@ -18,7 +18,6 @@ const eligible_audit_EmptyBid = path.resolve(
 export const router = express.Router()
 
 router.post('/revised_test', (req, res, next) => {
-    console.log(req.body)
     //간이종심제 Bid 만들기
     let RadioDecimal = req.body.RadioDecimal_Check
     let StandardPrice = req.body.CheckStandardPrice
@@ -28,8 +27,8 @@ router.post('/revised_test', (req, res, next) => {
     let LaborCost_Click = req.body.CheckLaborCost_Click
     let CompanyName = req.body.CompanyRegistrationName
     let CompanyNum = req.body.CompanyRegistrationNum
-    let BalancedRate = req.body.BalancedRateNum
-    let PersonalRate = req.body.PersonalRateNum
+    let BalancedRate = Number(req.body.BalancedRateNum)
+    let PersonalRate = Number(req.body.PersonalRateNum)
     // 클라이언트로부터 받아야 할 정보들
 
     let bidName = req.body.bidName //어떤 입찰 건에 대한 BID인지 판단하기 위한 bidName (우선 사용자로부터 직접 파일 이름을 입력받음 추후 입력받지 않게 만들 예정 => 프론트의 url /:id 값을 bidID로 구분해 받으면서 )
@@ -48,23 +47,38 @@ router.post('/revised_test', (req, res, next) => {
 
             console.log('-----------------------------------')
 
-            //사용자가 입력한 대로 입찰서 작성
-            execute_revised(
-                RadioDecimal,
-                StandardPrice,
-                WeightValue,
-                CAD_Click,
-                Ceiling_Click,
-                LaborCost_Click,
-                CompanyName,
-                CompanyNum,
-                BalancedRate,
-                PersonalRate
-            )
+            try {
+                //사용자가 입력한 대로 입찰서 작성
+                execute_revised(
+                    RadioDecimal,
+                    StandardPrice,
+                    WeightValue,
+                    CAD_Click,
+                    Ceiling_Click,
+                    LaborCost_Click,
+                    CompanyName,
+                    CompanyNum,
+                    BalancedRate,
+                    PersonalRate
+                )
+                console.log('입찰서 작성완료')
+            } catch (err) {
+                return res.send({
+                    isSuccess: false,
+                    value: '간이종심제 입찰서 모듈 오류',
+                    error: err,
+                }) //입찰서 작성 도중 문제 발생
+            }
 
+            if (!fs.existsSync(folder_path + '\\' + req.session.nickname)) {
+                //사용자가 만든 입찰서는 사용자 전용 폴더로 따로 관리하기
+                fs.mkdirSync(folder_path + '\\' + req.session.nickname) //사용자 전용 폴더가 없으면 새롭게 만든다.
+                console.log('사용자폴더 생성')
+            }
             if (!fs.existsSync(folder_path + '\\' + req.session.nickname + '\\' + bidName)) {
                 //사용자가 만든 입찰서는 사용자 전용 폴더로 따로 관리하기
                 fs.mkdirSync(folder_path + '\\' + req.session.nickname + '\\' + bidName) //사용자 전용 폴더가 없으면 새롭게 만든다.
+                console.log('사용자 ' + bidName + ' 폴더 생성')
             }
 
             // let date = new Date();  //날짜 객체
@@ -91,9 +105,10 @@ router.post('/revised_test', (req, res, next) => {
                     PersonalRate +
                     '.BID'
             )
+            console.log('사용자파일 생성')
 
             db.query(
-                'insert into userBidFiles (userID, bidID, bidPath, balancedRate, personalRate) value (?, ?, ?, ?, ?)',
+                'insert into userBidFiles_revised_test (userID, bidID, bidPath, balancedRate, personalRate) value (?, ?, ?, ?, ?)',
                 [
                     req.session.nickname,
                     bidName,
@@ -112,15 +127,15 @@ router.post('/revised_test', (req, res, next) => {
                 ],
                 (err2, result, field) => {
                     if (err2) next(err2)
-
-                    console.log(result)
-
-                    return res.send(true)
+                    else {
+                        console.log('성공ㅇ')
+                        return res.send({ isSuccess: true })
+                    }
                 }
             ) //사용자가 만든 입찰서의 위치를 DB에 저장한다.
         } else {
             //못찾았다면
-            return res.send(false) //false를 응답함
+            return res.send({ isSuccess: false, value: 'DB에 공내역서가 없음' }) //false를 응답함
         }
     })
 })
@@ -139,6 +154,7 @@ router.post('/eligible_audit', (req, res) => {
     // 클라이언트로부터 받아야 할 정보들
 
     let bidName = req.body.bidName //어떤 입찰 건에 대한 BID인지 판단하기 위한 bidName (우선 사용자로부터 직접 파일 이름을 입력받음 추후 입력받지 않게 만들 예정 => 프론트의 url /:id 값을 bidID로 구분해 받으면서 )
+    let resultPrice = undefined //도급비계
 
     db.query('select bidPath from emptybid where bidID = ?', [bidName], (err, result, field) => {
         //DB로부터 bidName에 대한 서버에 저장되어 있는 공내역서의 path를 조회
@@ -152,19 +168,31 @@ router.post('/eligible_audit', (req, res) => {
                 eligible_audit_EmptyBid + '\\' + bidName + '.BID'
             )
 
-            //사용자가 입력한 대로 입찰서 작성
-            execute_eligible(
-                laborRate,
-                expenseRate,
-                genMngRate,
-                profitRate,
-                difficultyRate,
-                CompanyName,
-                CompanyNum,
-                basePrice,
-                estimateRating
-            )
+            try {
+                //사용자가 입력한 대로 입찰서 작성
+                resultPrice = execute_eligible(
+                    laborRate,
+                    expenseRate,
+                    genMngRate,
+                    profitRate,
+                    difficultyRate,
+                    CompanyName,
+                    CompanyNum,
+                    basePrice,
+                    estimateRating
+                )
+            } catch (err) {
+                return res.send({
+                    isSuccess: false,
+                    value: '적격 심사 입찰서 모듈 오류',
+                    error: err,
+                })
+            }
 
+            if (!fs.existsSync(folder_path + '\\' + req.session.nickname)) {
+                //사용자가 만든 입찰서는 사용자 전용 폴더로 따로 관리하기
+                fs.mkdirSync(folder_path + '\\' + req.session.nickname) //사용자 전용 폴더가 없으면 새롭게 만든다.
+            }
             if (!fs.existsSync(folder_path + '\\' + req.session.nickname + '\\' + bidName)) {
                 //사용자가 만든 입찰서는 사용자 전용 폴더로 따로 관리하기
                 fs.mkdirSync(folder_path + '\\' + req.session.nickname + '\\' + bidName) //사용자 전용 폴더가 없으면 새롭게 만든다.
@@ -188,15 +216,13 @@ router.post('/eligible_audit', (req, res) => {
                     CompanyName +
                     '_' +
                     bidName +
-                    '_업평_' +
-                    BalancedRate +
-                    '_내사정율_' +
-                    PersonalRate +
+                    '_예가사정율_' +
+                    estimateRating +
                     '.BID'
             )
 
             db.query(
-                'insert into userBidFiles (userID, bidID, bidPath, balancedRate, personalRate) value (?, ?, ?, ?, ?)',
+                'insert into userBidFiles_eligible_audit (userID, bidID, bidPath, basePrice, estimateRating) value (?, ?, ?, ?, ?)',
                 [
                     req.session.nickname,
                     bidName,
@@ -205,25 +231,22 @@ router.post('/eligible_audit', (req, res) => {
                         CompanyName +
                         '_' +
                         bidName +
-                        '_업평_' +
-                        BalancedRate +
-                        '_내사정율_' +
-                        PersonalRate +
+                        '_예가사정율_' +
+                        estimateRating +
                         '.BID',
-                    BalancedRate,
-                    PersonalRate,
+                    basePrice,
+                    estimateRating,
                 ],
                 (err2, result, field) => {
                     if (err2) next(err2)
-
-                    console.log(result)
-
-                    return res.send(true)
+                    else {
+                        return res.send({ isSuccess: true, value: resultPrice })
+                    }
                 }
             ) //사용자가 만든 입찰서의 위치를 DB에 저장한다.
         } else {
             //못찾았다면
-            return res.send(false) //false를 응답함
+            return res.send({ isSuccess: false, value: 'DB에 공내역서가 없음' }) //false를 응답함
         }
     })
 })
