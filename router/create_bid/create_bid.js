@@ -30,7 +30,9 @@ router.post('/revised_test', (req, res, next) => {
 
     let bidName = req.body.bidName //어떤 입찰 건에 대한 BID인지 판단하기 위한 bidName (우선 사용자로부터 직접 파일 이름을 입력받음 추후 입력받지 않게 만들 예정 => 프론트의 url /:id 값을 bidID로 구분해 받으면서 )
 
-    db.query('select bidPath from emptybid where bidID = ?', [bidName], (err, result, field) => {   //DB로부터 bidName에 대한 서버에 저장되어 있는 공내역서의 path를 조회
+    console.log(bidName);
+
+    db.query('select bidPath from emptybid where constName = ?', [bidName], (err, result, field) => {   //DB로부터 bidName에 대한 서버에 저장되어 있는 공내역서의 path를 조회
         if (err) next(err)
 
         if (result.length > 0) {    //찾았다면
@@ -49,7 +51,8 @@ router.post('/revised_test', (req, res, next) => {
 
             if (!fs.existsSync(folder_path + '\\' + req.session.nickname + '\\' + bidName)) {
                 //사용자가 만든 입찰서는 사용자 전용 폴더로 따로 관리하기
-                fs.mkdirSync(folder_path + '\\' + req.session.nickname + '\\' + bidName) //사용자 전용 폴더가 없으면 새롭게 만든다.
+                fs.mkdirSync(folder_path + '\\' + req.session.nickname);
+                fs.mkdirSync(folder_path + '\\' + req.session.nickname + '\\' + bidName); //사용자 전용 폴더가 없으면 새롭게 만든다.
             }
 
             // let date = new Date();  //날짜 객체
@@ -142,6 +145,7 @@ router.post('/eligible_audit', (req, res) => {
 
             if (!fs.existsSync(folder_path + '\\' + req.session.nickname + '\\' + bidName)) {
                 //사용자가 만든 입찰서는 사용자 전용 폴더로 따로 관리하기
+                fs.mkdirSync(folder_path + '\\' + req.session.nickname);
                 fs.mkdirSync(folder_path + '\\' + req.session.nickname + '\\' + bidName) //사용자 전용 폴더가 없으면 새롭게 만든다.
             }
 

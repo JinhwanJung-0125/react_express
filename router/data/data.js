@@ -20,7 +20,7 @@ router.all('/download/:bidPath', (req, res, next) => {
             if (result.length > 0) {
                 const file = folder_path + '\\' + req.session.nickname + '\\' + result[0].bidPath; //요구하는 파일의 위치
                 res.download(file, result[0].bidID + '.BID'); //다운로드를 보냄
-            } else {
+            } else {    //간이종심제 쪽에 없다면
                 db.query('select bidPath, bidID from userbidfiles_eligible_audit where bidPath = ?', [req.params.bidPath], (err2, result, field) => {   //요구하는 파일 위치와 bidID를 DB에서 조회(적격심사)
                     if (err2) next(err2);
 
@@ -29,7 +29,7 @@ router.all('/download/:bidPath', (req, res, next) => {
                         res.download(file, result[0].bidID + '.BID'); //다운로드를 보냄
                     }
                     else {
-                        res.send({ isSuccess: false, value: "DB에 파일 위치 없음" });
+                        res.send({ isSuccess: false, value: "DB에 파일 위치 없음" });   //서버에 요구하는 파일에 대한 정보가 DB에 없음
                     }
                 })
             }

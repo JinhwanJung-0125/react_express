@@ -143,6 +143,7 @@ router.get('/:bidId', (req, res) => {
 
         bidList = JSON.parse(bidList)
         let bidInfo = bidList.filter((bid) => bid.bidNtceNo === req.params.bidId)
+        console.log(bidInfo[0])
         return res.send(bidInfo[0])
     } catch (e) {
         //오늘자 bidList 데이터가 없다면 새로 req

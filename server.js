@@ -20,13 +20,12 @@ app.set('port', process.env.PORT || 3001)
 const FileStore = sessionStore(session)
 
 app.use(morgan('dev'))
-// app.use(
-//     cors({
-//         origin: true,
-//         credentials: true,
-//     })
-// )
-app.use(cors())
+app.use(
+    cors({
+        origin: true,
+        credentials: true,
+    })
+)
 app.use(express.static(path.join(__dirname, '../React-Project/build'))) //react 프로젝트의 build를 static으로 사용하게 함
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
