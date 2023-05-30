@@ -30,34 +30,18 @@ router.post('/revised_test', (req, res, next) => {
 
     let bidName = req.body.bidName //어떤 입찰 건에 대한 BID인지 판단하기 위한 bidName (우선 사용자로부터 직접 파일 이름을 입력받음 추후 입력받지 않게 만들 예정 => 프론트의 url /:id 값을 bidID로 구분해 받으면서 )
 
-    db.query('select bidPath from emptybid where bidID = ?', [bidName], (err, result, field) => {
-        //DB로부터 bidName에 대한 서버에 저장되어 있는 공내역서의 path를 조회
+    db.query('select bidPath from emptybid where bidID = ?', [bidName], (err, result, field) => {   //DB로부터 bidName에 대한 서버에 저장되어 있는 공내역서의 path를 조회
         if (err) next(err)
 
-        if (result.length > 0) {
-            //찾았다면
+        if (result.length > 0) {    //찾았다면
             //공내역서를 복사해 작업 폴더로 옳김
-            fs.copyFileSync(
-                folder_path + '\\' + result[0].bidPath,
-                revised_test_EmptyBid + '\\' + bidName + '.BID'
-            )
+            fs.copyFileSync(folder_path + '\\' + result[0].bidPath, revised_test_EmptyBid + '\\' + bidName + '.BID');
 
             console.log('-----------------------------------')
 
             try {
                 //사용자가 입력한 대로 입찰서 작성
-                execute_revised(
-                    RadioDecimal,
-                    StandardPrice,
-                    WeightValue,
-                    CAD_Click,
-                    Ceiling_Click,
-                    LaborCost_Click,
-                    CompanyName,
-                    CompanyNum,
-                    BalancedRate,
-                    PersonalRate
-                );
+                execute_revised(RadioDecimal, StandardPrice, WeightValue, CAD_Click, Ceiling_Click, LaborCost_Click, CompanyName, CompanyNum, BalancedRate, PersonalRate);
             }
             catch (err) {
                 return res.send({ isSuccess: false, value: "간이종심제 입찰서 모듈 오류", error: err }); //입찰서 작성 도중 문제 발생
@@ -75,23 +59,7 @@ router.post('/revised_test', (req, res, next) => {
             //console.log(makeDate)
 
             //아까 만든 입찰서를 사용자 전용 폴더에 옳긴다.
-            fs.renameSync(
-                revised_test_EmptyBid + '\\' + bidName + '.BID',
-                folder_path +
-                '\\' +
-                req.session.nickname +
-                '\\' +
-                bidName +
-                '\\' +
-                CompanyName +
-                '_' +
-                bidName +
-                '_업평_' +
-                BalancedRate +
-                '_내사정율_' +
-                PersonalRate +
-                '.BID'
-            )
+            fs.renameSync(revised_test_EmptyBid + '\\' + bidName + '.BID', folder_path + '\\' + req.session.nickname + '\\' + bidName + '\\' + CompanyName + '_' + bidName + '_업평_' + BalancedRate + '_내사정율_' + PersonalRate + '.BID');
 
             db.query(
                 'insert into userBidFiles_revised_test (userID, bidID, bidPath, balancedRate, personalRate) value (?, ?, ?, ?, ?)',

@@ -111,12 +111,12 @@ router.get('/', (req, res) => {
             'utf-8'
             //오늘자 bidList 데이터가 있다면 바로 res
         )
-        res.send(bidList)
+        return res.send(bidList)
     } catch (e) {
         if (e.code === 'ENOENT') {
             //오늘자 bidList 데이터가 없다면 새로 req
             getBidList(req).then((response) => {
-                res.send(response)
+                return res.send(response)
             })
         }
     }
@@ -140,21 +140,22 @@ router.get('/:bidId', (req, res) => {
             path.resolve(path.resolve(), './bidList') + '\\' + today + '_bidList',
             'utf-8'
         )
+
         bidList = JSON.parse(bidList)
         let bidInfo = bidList.filter((bid) => bid.bidNtceNo === req.params.bidId)
-        res.send(bidInfo[0])
+        return res.send(bidInfo[0])
     } catch (e) {
         //오늘자 bidList 데이터가 없다면 새로 req
         if (e.code === 'ENOENT') {
             getBidList(req).then((response) => {
                 let bidInfo = response.filter((bid) => bid.bidNtceNo === req.params.bidId)
-                res.send(bidInfo[0])
+                return res.send(bidInfo[0])
             })
         }
     }
-    if (bidList == undefined) {
-    } else {
-        //오늘자 bidList 데이터가 있다면 바로 res
-        console.log(typeof bidList)
-    }
+    // if (bidList == undefined) {
+    // } else {
+    //     //오늘자 bidList 데이터가 있다면 바로 res
+    //     console.log(typeof bidList)
+    // }
 })
