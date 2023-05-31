@@ -33,10 +33,12 @@ router.post('/revised_test', (req, res, next) => {
 
     let bidName = req.body.bidName //어떤 입찰 건에 대한 BID인지 판단하기 위한 bidName (우선 사용자로부터 직접 파일 이름을 입력받음 추후 입력받지 않게 만들 예정 => 프론트의 url /:id 값을 bidID로 구분해 받으면서 )
 
+    console.log(bidName)
+
     db.query('select bidPath from emptybid where bidID = ?', [bidName], (err, result, field) => {
         //DB로부터 bidName에 대한 서버에 저장되어 있는 공내역서의 path를 조회
         if (err) next(err)
-
+        console.log(result)
         if (result.length > 0) {
             //찾았다면
             //공내역서를 복사해 작업 폴더로 옳김
@@ -61,7 +63,6 @@ router.post('/revised_test', (req, res, next) => {
                     BalancedRate,
                     PersonalRate
                 )
-                console.log('입찰서 작성완료')
             } catch (err) {
                 return res.send({
                     isSuccess: false,
@@ -73,12 +74,10 @@ router.post('/revised_test', (req, res, next) => {
             if (!fs.existsSync(folder_path + '\\' + req.session.nickname)) {
                 //사용자가 만든 입찰서는 사용자 전용 폴더로 따로 관리하기
                 fs.mkdirSync(folder_path + '\\' + req.session.nickname) //사용자 전용 폴더가 없으면 새롭게 만든다.
-                console.log('사용자폴더 생성')
             }
             if (!fs.existsSync(folder_path + '\\' + req.session.nickname + '\\' + bidName)) {
                 //사용자가 만든 입찰서는 사용자 전용 폴더로 따로 관리하기
                 fs.mkdirSync(folder_path + '\\' + req.session.nickname + '\\' + bidName) //사용자 전용 폴더가 없으면 새롭게 만든다.
-                console.log('사용자 ' + bidName + ' 폴더 생성')
             }
 
             // let date = new Date();  //날짜 객체
@@ -105,7 +104,6 @@ router.post('/revised_test', (req, res, next) => {
                     PersonalRate +
                     '.BID'
             )
-            console.log('사용자파일 생성')
 
             db.query(
                 'insert into userBidFiles_revised_test (userID, bidID, bidPath, balancedRate, personalRate) value (?, ?, ?, ?, ?)',
@@ -126,11 +124,11 @@ router.post('/revised_test', (req, res, next) => {
                     PersonalRate,
                 ],
                 (err2, result, field) => {
-                    if (err2) next(err2)
-                    else {
-                        console.log('성공ㅇ')
-                        return res.send({ isSuccess: true })
-                    }
+                    if (err2) return next(err2)
+
+                    console.log(result)
+
+                    return res.send({ isSuccess: true })
                 }
             ) //사용자가 만든 입찰서의 위치를 DB에 저장한다.
         } else {
@@ -142,15 +140,15 @@ router.post('/revised_test', (req, res, next) => {
 
 router.post('/eligible_audit', (req, res) => {
     //적격심사 Bid 만들기
-    let laborRate = req.body.laborRate
-    let expenseRate = req.body.expenseRate
-    let genMngRate = req.body.genMngRate
-    let profitRate = req.body.profitRate
-    let difficultyRate = req.body.difficultyRate
+    let laborRate = Number(req.body.laborRate)
+    let expenseRate = Number(req.body.expenseRate)
+    let genMngRate = Number(req.body.genMngRate)
+    let profitRate = Number(req.body.profitRate)
+    let difficultyRate = Number(req.body.difficultyRate)
     let CompanyName = req.body.CompanyRegistrationName
     let CompanyNum = req.body.CompanyRegistrationNum
-    let basePrice = req.body.basePrice
-    let estimateRating = req.body.estimateRating
+    let basePrice = Number(req.body.basePrice)
+    let estimateRating = Number(req.body.estimateRating)
     // 클라이언트로부터 받아야 할 정보들
 
     let bidName = req.body.bidName //어떤 입찰 건에 대한 BID인지 판단하기 위한 bidName (우선 사용자로부터 직접 파일 이름을 입력받음 추후 입력받지 않게 만들 예정 => 프론트의 url /:id 값을 bidID로 구분해 받으면서 )
@@ -239,9 +237,10 @@ router.post('/eligible_audit', (req, res) => {
                 ],
                 (err2, result, field) => {
                     if (err2) next(err2)
-                    else {
-                        return res.send({ isSuccess: true, value: resultPrice })
-                    }
+
+                    console.log(result)
+
+                    return res.send({ isSuccess: true, value: resultPrice })
                 }
             ) //사용자가 만든 입찰서의 위치를 DB에 저장한다.
         } else {

@@ -26,7 +26,7 @@ app.use(
         credentials: true,
     })
 )
-app.use(express.static(path.join(__dirname, '../React-Project/build'))) //react 프로젝트의 build를 static으로 사용하게 함
+app.use(express.static(path.join(__dirname, '../front/build'))) //react 프로젝트의 build를 static으로 사용하게 함
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser(process.env.COOKIE_SECRET))
@@ -49,7 +49,7 @@ app.use('/auth', authRouter) //로그인, 회원 가입 등 인증 관련 처리
 
 app.use('/post', postRouter) //공고 리스트 처리 라우터
 
-app.use('/createBid', createBidRouter) //입찰서 작성 처리 라우터
+app.use('/createBid', createBidRouter) //입찰서 작성 처리 라우터s
 
 app.use('/data', dataRouter) //입찰서 데이터 관련 처리 라우터
 
