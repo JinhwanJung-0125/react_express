@@ -45,38 +45,53 @@ router.get('/', (req, res) => {
 //     }
 // });
 
-router.post('/add_file', upload.fields([{ name: 'file' }, { name: 'data' }]), (req, res, next) => {
-    //공내역서를 업로드하는 미들웨어
-    let constName = fs.readFileSync(req.files.data[0].path)
+router.post(
+    '/add_file',
+    upload.fields([{ name: 'file' }, { name: 'data' }]),
+    (req, res, next) => {
+        //공내역서를 업로드하는 미들웨어
+        let constName = fs.readFileSync(req.files.data[0].path)
 
-    constName = JSON.parse(constName.toString())[0].constName //blob 파일로부터 공사 명 추출
+        constName = JSON.parse(constName.toString())[0].constName //blob 파일로부터 공사 명 추출
 
-    let bidId = req.files.file[0].originalname.replace(/[^0-9 | -]+/, '') //파일 이름에서 bid id 추출
+        let bidId = req.files.file[0].originalname.replace(/[^0-9 | -]+/, '') //파일 이름에서 bid id 추출
 
-    db.query("select * from emptybid where constName = ? and bidID = ?", [constName, bidId], (err, data) => {   //DB에 이미 공내역서가 저장되어 있는지 확인
-        if (err) next(err);
+        db.query(
+            'select * from emptybid where constName = ? and bidID = ?',
+            [constName, bidId],
+            (err, data) => {
+                //DB에 이미 공내역서가 저장되어 있는지 확인
+                if (err) next(err)
 
-        if (data) { //이미 저장되어 있다면
-            fs.rmSync(req.files.data[0].path) //blob파일 삭제
-            return res.send({ isSuccess: true });
-        }
-        else {  //저장되어있지 않다면
-            db.query('insert into emptybid values (?, ?, ?, ?)', [constName, bidId, req.files.file[0].path, req.files.file[0].size], (err, data) => {    //DB에는 공사명, 공내역서의 id와 경로, 크기만 저장됨
-                if (err) next(err) //db에러
-
-                fs.rmSync(req.files.data[0].path) //blob파일 삭제
-
-                if (data.affectedRows === 1) {
-                    //db에 저장이 됬다면
-                    return res.send({ isSuccess: true });
+                if (data.length !== 0) {
+                    //이미 저장되어 있다면
+                    console.log(data)
+                    fs.rmSync(req.files.data[0].path) //blob파일 삭제
+                    return res.send({ isSuccess: true })
                 } else {
-                    //저장이 안됬다면
-                    return res.send({ isSuccess: false, value: "DB에 저장되지 않음" });
+                    //저장되어있지 않다면
+                    db.query(
+                        'insert into emptybid values (?, ?, ?, ?)',
+                        [constName, bidId, req.files.file[0].path, req.files.file[0].size],
+                        (err, data) => {
+                            //DB에는 공사명, 공내역서의 id와 경로, 크기만 저장됨
+                            if (err) next(err) //db에러
+
+                            fs.rmSync(req.files.data[0].path) //blob파일 삭제
+
+                            if (data.affectedRows === 1) {
+                                //db에 저장이 됬다면
+                                return res.send({ isSuccess: true })
+                            } else {
+                                //저장이 안됬다면
+                                return res.send({ isSuccess: false, value: 'DB에 저장되지 않음' })
+                            }
+                        }
+                    )
                 }
-            })
-        }
-    })
-}
+            }
+        )
+    }
     // (req, res) => {
     // if(true){
     //     //post에 새로운 입찰 건을 추가하는 method

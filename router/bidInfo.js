@@ -4,11 +4,10 @@ import fs from 'fs'
 import path from 'path'
 export const router = express.Router()
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1'
 //데이터 베이스에 저장? 혹은 json파일로 저장 후 요청시마다 전달?
 const getBidData = async (url) => {
-    console.log(url)
-
+    // console.log('a')
     let res
     try {
         res = await axios.get(url)
@@ -19,8 +18,7 @@ const getBidData = async (url) => {
 }
 
 const getTotalPage = async (res) => {
-    console.log(res.data.response.body.totalCount, 'totalN')
-
+    // console.log('c')
     return Math.ceil(res.data.response.body.totalCount / 100)
 }
 
@@ -28,20 +26,43 @@ const concatBidList = async (baseList, res) => {
     let targetBidList = res.data.response.body.items.filter(
         (bid) =>
             bid.sucsfbidMthdNm ===
-            '추정가격 300억원미만 100억원 이상(종합심사, 간이형공사 *별표1-5)' ||
+                '추정가격 300억원미만 100억원 이상(종합심사, 간이형공사 *별표1-5)' ||
             bid.sucsfbidMthdNm === '적격심사-추정가격 300억원미만 100억원이상'
     )
-    console.log(targetBidList.length)
+    // console.log('b')
+
+    // console.log(targetBidList.length)
     baseList = baseList.concat(targetBidList)
 
     return baseList
 }
 
 const sortBidList = async (bidList) => {
-    const sorted_list = bidList.sort(function (a, b) {
+    const sortedList = bidList.sort(function (a, b) {
         return new Date(a.opengDt).getTime() - new Date(b.opengDt).getTime()
     })
-    return sorted_list
+    return sortedList
+}
+
+const reverseSortBidList = async (bidList) => {
+    const reverseSortedList = bidList
+        .sort(function (a, b) {
+            return new Date(a.opengDt).getTime() - new Date(b.opengDt).getTime()
+        })
+        .reverse()
+    return reverseSortedList
+}
+
+const deleteDuplication = async (bidList) => {
+    let resultList = bidList.filter((bid, index) => {
+        return (
+            bidList.findIndex((e) => {
+                // console.log(bid.bidNtceNm, e.bidNtceNm)
+                return bid.bidNtceNm === e.bidNtceNm
+            }) === index
+        )
+    })
+    return resultList
 }
 
 //오늘 날짜, 30일 뒤 날짜 yyyymmdd 형식으로 반환
@@ -51,7 +72,7 @@ const getDate = () => {
 
     let endDate = new Date(date.setDate(date.getDate() + 30))
     let endDay = endDate.toISOString().substring(0, 10).replace(/-/g, '')
-    console.log(today, endDay)
+    // console.log(today, endDay)
     return { today, endDay }
 }
 
@@ -74,7 +95,7 @@ const getBidList = async (request) => {
     bidList = await concatBidList(bidList, res)
     let totalPage = await getTotalPage(res)
     row = '100'
-    console.log(totalPage, 'total')
+    // console.log(totalPage, 'total')
     for (let i = 2; i <= totalPage; i++) {
         pageNum = i
         let bidList_url =
@@ -92,7 +113,11 @@ const getBidList = async (request) => {
 
         bidList = await concatBidList(bidList, res2)
     }
-    const sortedBidList = await sortBidList(bidList)
+    const reverseSortedBidList = await reverseSortBidList(bidList)
+
+    const resultBidList = await deleteDuplication(reverseSortedBidList)
+
+    const sortedBidList = await sortBidList(resultBidList)
 
     //bidList JSON 파일로 저장
     let folder = path.resolve(path.resolve(), './bidList')
@@ -106,57 +131,69 @@ router.get('/', (req, res) => {
     // console.log(path.resolve(path.resolve(), './bidList'))
     let { today, endDay } = getDate()
     try {
+        // console.log('t')
+
         let bidList = fs.readFileSync(
             path.resolve(path.resolve(), './bidList') + '\\' + today + '_bidList',
             'utf-8'
             //오늘자 bidList 데이터가 있다면 바로 res
         )
-        return res.send(bidList)
+        bidList = JSON.parse(bidList)
+        res.send(bidList)
     } catch (e) {
         if (e.code === 'ENOENT') {
+            // console.log('c')
+
             //오늘자 bidList 데이터가 없다면 새로 req
             getBidList(req).then((response) => {
-                return res.send(response)
+                res.send(response)
             })
         }
     }
-    // if (bidList == undefined) {
-    //     //오늘자 bidList 데이터가 없다면 새로 req
-    //     getBidList(req).then((response) => {
-    //         return res.send(response)
-    //     })
-    // } else {
-    //오늘자 bidList 데이터가 있다면 바로 res
-    // return res.send(bidList)
-    // }
 })
 
+const getBasePrice = async (bidId) => {
+    let url =
+        'https://apis.data.go.kr/1230000/BidPublicInfoService04/getBidPblancListInfoCnstwkBsisAmount01?numOfRows=5&pageNo=1&ServiceKey=2IkKF%2BDSdBvTw48wVks8riCqt%2FnTI2k3QbZoaEgCk%2FR05ZfMeDI%2FJiRA8FmGy6q30rCLNKmCRYMBWiY9Xm6aXQ%3D%3D&inqryDiv=2&bidNtceNo=' +
+        bidId +
+        '&type=json'
+    let res = await getBidData(url)
+    return res
+}
 //오늘자 bidList 없을시 오류->try catch 사용하는 것으로 수정-5/22
 router.get('/:bidId', (req, res) => {
     let { today, endDay } = getDate()
 
     try {
+        //오늘자 bidList 데이터가 있다면 바로 res
         let bidList = fs.readFileSync(
             path.resolve(path.resolve(), './bidList') + '\\' + today + '_bidList',
             'utf-8'
         )
-
         bidList = JSON.parse(bidList)
         let bidInfo = bidList.filter((bid) => bid.bidNtceNo === req.params.bidId)
-        console.log(bidInfo[0])
-        return res.send(bidInfo[0])
+        getBasePrice(req.params.bidId).then((basePrice) => {
+            if (basePrice.data.response.body.items === undefined) {
+                // console.log()
+                res.send({ bidData: bidInfo[0], basePriceData: false })
+            } else {
+                // console.log(basePrice.data.response.body.items)
+                res.send({
+                    bidData: bidInfo[0],
+                    basePriceData: basePrice.data.response.body.items[0],
+                })
+            }
+        })
     } catch (e) {
         //오늘자 bidList 데이터가 없다면 새로 req
         if (e.code === 'ENOENT') {
             getBidList(req).then((response) => {
                 let bidInfo = response.filter((bid) => bid.bidNtceNo === req.params.bidId)
-                return res.send(bidInfo[0])
+                getBasePrice(req.params.bidId).then((basePrice) => {
+                    // console.log(basePrice, '기초 금액 데이터')
+                    res.send({ bidData: bidInfo[0], basePriceData: basePrice })
+                })
             })
         }
     }
-    // if (bidList == undefined) {
-    // } else {
-    //     //오늘자 bidList 데이터가 있다면 바로 res
-    //     console.log(typeof bidList)
-    // }
 })
