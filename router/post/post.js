@@ -65,7 +65,7 @@ router.post(
 
                 if (data.length !== 0) {
                     //이미 저장되어 있다면
-                    console.log(data)
+
                     fs.rmSync(req.files.data[0].path) //blob파일 삭제
                     return res.send({ isSuccess: true })
                 } else {
@@ -75,7 +75,10 @@ router.post(
                         [constName, bidId, req.files.file[0].path, req.files.file[0].size],
                         (err, data) => {
                             //DB에는 공사명, 공내역서의 id와 경로, 크기만 저장됨
-                            if (err) next(err) //db에러
+                            if (err) {
+                                next(err)
+                                return
+                            } //db에러
 
                             fs.rmSync(req.files.data[0].path) //blob파일 삭제
 

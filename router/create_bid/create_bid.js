@@ -33,12 +33,9 @@ router.post('/revised_test', (req, res, next) => {
 
     let bidName = req.body.bidName //어떤 입찰 건에 대한 BID인지 판단하기 위한 bidName (우선 사용자로부터 직접 파일 이름을 입력받음 추후 입력받지 않게 만들 예정 => 프론트의 url /:id 값을 bidID로 구분해 받으면서 )
 
-    console.log(bidName)
-
     db.query('select bidPath from emptybid where bidID = ?', [bidName], (err, result, field) => {
         //DB로부터 bidName에 대한 서버에 저장되어 있는 공내역서의 path를 조회
         if (err) next(err)
-        console.log(result)
         if (result.length > 0) {
             //찾았다면
             //공내역서를 복사해 작업 폴더로 옳김
@@ -126,8 +123,6 @@ router.post('/revised_test', (req, res, next) => {
                 (err2, result, field) => {
                     if (err2) return next(err2)
 
-                    console.log(result)
-
                     return res.send({ isSuccess: true })
                 }
             ) //사용자가 만든 입찰서의 위치를 DB에 저장한다.
@@ -138,7 +133,7 @@ router.post('/revised_test', (req, res, next) => {
     })
 })
 
-router.post('/eligible_audit', (req, res) => {
+router.post('/eligible_audit', (req, res, next) => {
     //적격심사 Bid 만들기
     let laborRate = Number(req.body.laborRate)
     let expenseRate = Number(req.body.expenseRate)
@@ -153,10 +148,9 @@ router.post('/eligible_audit', (req, res) => {
 
     let bidName = req.body.bidName //어떤 입찰 건에 대한 BID인지 판단하기 위한 bidName (우선 사용자로부터 직접 파일 이름을 입력받음 추후 입력받지 않게 만들 예정 => 프론트의 url /:id 값을 bidID로 구분해 받으면서 )
     let resultPrice = undefined //도급비계
-
     db.query('select bidPath from emptybid where bidID = ?', [bidName], (err, result, field) => {
         //DB로부터 bidName에 대한 서버에 저장되어 있는 공내역서의 path를 조회
-        if (err) next(err)
+        if (err) return next(err)
 
         if (result.length > 0) {
             //찾았다면
@@ -236,10 +230,10 @@ router.post('/eligible_audit', (req, res) => {
                     estimateRating,
                 ],
                 (err2, result, field) => {
-                    if (err2) next(err2)
-
-                    console.log(result)
-
+                    if (err2) {
+                        next(err2)
+                        return
+                    }
                     return res.send({ isSuccess: true, value: resultPrice })
                 }
             ) //사용자가 만든 입찰서의 위치를 DB에 저장한다.

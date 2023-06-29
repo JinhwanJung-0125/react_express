@@ -82,8 +82,6 @@ router.post('/register_process', (req, res, next) => {
     let username = req.body.id
     let password = req.body.password
 
-    console.log(username, password, '회원가입')
-
     if (username !== undefined && password !== undefined) {
         //id, password 다 작성했다면
         db.query('select * from users where id = ?', [username], (err, result, field) => {
@@ -118,11 +116,8 @@ router.post('/register_process', (req, res, next) => {
 router.get('/authCheck', (req, res) => {
     //세션으로 로그인 여부 확인
     if (req.session.is_logined !== undefined && req.session.is_logined) {
-        console.log('로그인중')
         return res.send(true)
     } else {
-        console.log('로그인중 아님')
-        console.log(req.session.is_logined)
         return res.send(false)
     }
 })
