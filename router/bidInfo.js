@@ -161,12 +161,17 @@ router.get('/:bidId', (req, res) => {
         bidList = JSON.parse(bidList)
         let bidInfo = bidList.filter((bid) => bid.bidNtceNo === req.params.bidId)
 
+        console.log(bidInfo[0]);
+
         getBasePrice(req.params.bidId).then((basePrice) => {
             if (basePrice.data.response.body.items === undefined) {
                 console.log('기초금액 데이터 없음')
                 res.send({ bidData: bidInfo[0], basePriceData: false })
             } else {
                 console.log('기초금액 데이터 있음')
+
+                console.log(basePrice.data.response.body.items[0]);
+
                 res.send({
                     bidData: bidInfo[0],
                     basePriceData: basePrice.data.response.body.items[0],

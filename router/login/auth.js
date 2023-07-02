@@ -79,9 +79,9 @@ router.get('/logout', (req, res) => {
 
 router.post('/register_process', (req, res, next) => {
     //회원가입 프로세스
-    let username = req.body.id
+    let username = req.body.ID
     let password = req.body.password
-
+    
     if (username !== undefined && password !== undefined) {
         //id, password 다 작성했다면
         db.query('select * from users where id = ?', [username], (err, result, field) => {

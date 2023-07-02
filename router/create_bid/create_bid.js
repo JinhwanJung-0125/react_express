@@ -1,18 +1,15 @@
 import express from 'express'
-import pkg_revised from '../../../BidHandling_CalculatePrice/execute.js'
+import pkg_revised from '../../../../Modules/Revised_test/BidHandling_CalculatePrice/execute.js'
 const { execute: execute_revised } = pkg_revised
-import pkg_eligible from '../../../CMC_Project_EliglbleAudit_Converted-master/excute.js'
+import pkg_eligible from '../../../../Modules/Eligible_audit/CMC_Project_EliglbleAudit_Converted/excute.js'
 const { execute: execute_eligible } = pkg_eligible
 import { db } from '../../lib/db.js'
 import fs from 'fs'
 import path from 'path'
 
 const folder_path = path.resolve('') //현재 파일이 속한 폴더의 상위 폴더 위치
-const revised_test_EmptyBid = path.resolve('../', 'BidHandling_CalculatePrice\\AutoBid/EmptyBid') //간이종심제 입찰서 작성 EmptyBid 폴더 위치
-const eligible_audit_EmptyBid = path.resolve(
-    '../',
-    'CMC_Project_EliglbleAudit_Converted-master/AutoBid/EmptyBid'
-) //적격심사 입찰서 작성 EmptyBid 폴더 위치
+const revised_test_EmptyBid = path.resolve('../../', 'Modules/Revised_test/BidHandling_CalculatePrice/AutoBid/EmptyBid') //간이종심제 입찰서 작성 EmptyBid 폴더 위치
+const eligible_audit_EmptyBid = path.resolve('../../', 'Modules/Eligible_audit/CMC_Project_EliglbleAudit_Converted/AutoBid/EmptyBid') //적격심사 입찰서 작성 EmptyBid 폴더 위치
 
 /**입찰서 작성과 관련된 router */
 export const router = express.Router()
