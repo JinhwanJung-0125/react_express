@@ -1,0 +1,50 @@
+{
+    "config": {
+        "target": "http://localhost:3001",
+        "phases": [
+            {"duration": 60, "arrivalRate": 5, "rampTo": 10}
+        ]
+    },
+    "scenarios": [
+        {
+            "name": "Server_Stress_Test_Create_Bid",
+            "flow": [
+                {
+                    "post": {
+                        "url": "/createBid/eligible_audit",
+                        "json": {
+                            "laborRate": ,
+                            "expenseRate": ,
+                            "genMngRate": ,
+                            "profitRate": ,
+                            "difficultyRate": ,
+                            "CompanyName": "Sever_Stress_Test_Eligible",
+                            "CompanyNum": "0000000000",
+                            "basePrice": ,
+                            "estimateRating": ,
+                            "bidName": 
+                        }
+                    }
+                },
+                {
+                    "post": {
+                        "url": "/CreateBid/revised_test",
+                        "json": {
+                            "RadioDecimal": 1,
+                            "StandardPrice": 1,
+                            "WeightValue": 1,
+                            "CAD_Click": 1,
+                            "Ceiling_Click": 1,
+                            "LaborCost_Click": 1,
+                            "CompanyName": "Server_Stress_Test_Revised",
+                            "CompanyNum": "1111111111",
+                            "BalancedRate": 1.265,
+                            "PersonalRate": -1.324,
+                            "bidName": 
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

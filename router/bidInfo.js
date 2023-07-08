@@ -2,9 +2,12 @@ import express, { response } from 'express'
 import axios from 'axios'
 import fs from 'fs'
 import path from 'path'
+import iconv from 'iconv-lite';
 export const router = express.Router()
+const __dirname = path.resolve();
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '1'
+
 //데이터 베이스에 저장? 혹은 json파일로 저장 후 요청시마다 전달?
 const getBidData = async (url) => {
     let res
@@ -148,6 +151,39 @@ const getBasePrice = async (bidId) => {
     let res = await getBidData(url)
     return res
 }
+
+const getBidFile = async (bidInfo) => {     //특정 공종의 정보가 담겨있는 bidInfo에서 공 내역서가 있다면 공 내역서 파일을 뽑아내는 메소드
+    let ntceSpecDocUrl = 'ntceSpecDocUrl';
+    let ntceSpecFileNm = 'ntceSpecFileNm';
+    let isFindBid = false;
+    let DocUrl = '';
+    let FileName = '';
+
+    for(let i = 1; i < 11; i++){
+        DocUrl = bidInfo[ntceSpecDocUrl + String(i)];
+        FileName = bidInfo[ntceSpecFileNm + String(i)];
+
+        let numOfFileType = DocUrl.slice(DocUrl.length - 4, DocUrl.length - 3);
+        if(numOfFileType === '4')   isFindBid = true;
+
+        if(isFindBid)   break;
+    }
+
+    if(isFindBid){
+        try{
+            let res = await axios.get(DocUrl, {responseType: 'arraybuffer'})
+            let resData = iconv.decode(res.data, 'utf-8')
+
+            console.log(resData);
+
+            fs.writeFileSync(path.resolve(__dirname, './Uploads/' + FileName), resData);
+        }
+        catch(e){
+            console.log(e);
+        }
+    }
+}
+
 //오늘자 bidList 없을시 오류->try catch 사용하는 것으로 수정-5/22
 router.get('/:bidId', (req, res) => {
     let { today, endDay } = getDate()
@@ -161,7 +197,7 @@ router.get('/:bidId', (req, res) => {
         bidList = JSON.parse(bidList)
         let bidInfo = bidList.filter((bid) => bid.bidNtceNo === req.params.bidId)
 
-        console.log(bidInfo[0]);
+        getBidFile(bidInfo[0]);
 
         getBasePrice(req.params.bidId).then((basePrice) => {
             if (basePrice.data.response.body.items === undefined) {

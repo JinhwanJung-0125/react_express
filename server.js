@@ -26,7 +26,7 @@ app.use(
         credentials: true,
     })
 )
-app.use(express.static(path.join(__dirname, '../../React-Project/build'))) //react 프로젝트의 build를 static으로 사용하게 함
+app.use(express.static(path.join(__dirname, '../React-Project/build'))) //react 프로젝트의 build를 static으로 사용하게 함
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser(process.env.COOKIE_SECRET))
@@ -59,7 +59,7 @@ app.use('/createdBidList', bidListRouter) //사용자가 작성한 입찰서 내
 
 app.get('*', (req, res) => {
     //어떤 접속이 오든 접속 시 index.html을 보내준다.
-    res.sendFile(path.join(__dirname, '../../React-Project/build/index.html')) //react 프로젝트의 index.html을 root로 사용함
+    res.sendFile(path.join(__dirname, '../React-Project/build/index.html')) //react 프로젝트의 index.html을 root로 사용함
 })
 
 // app.use((req, res) => {

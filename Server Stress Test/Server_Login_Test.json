@@ -1,0 +1,26 @@
+{
+    "config": {
+        "target": "http://localhost:3001",
+        "phases": [
+            {"duration": 60, "arrivalRate": 5, "rampTo": 10}
+        ]
+    },
+    "scenarios": [
+        {
+            "name": "Server_Stress_Test_Login",
+            "flow": [
+                {
+                    "post": {
+                        "url": "/auth/login_process",
+                        "json": {"ID": "testID", "password": "1111"}
+                    }
+                },
+                {
+                    "get": {
+                        "url": "/auth/logout"
+                    }
+                }
+            ]
+        }
+    ]
+}
