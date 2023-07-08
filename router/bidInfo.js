@@ -1,5 +1,6 @@
 import express, { response } from 'express'
 import axios from 'axios'
+import { db } from '../lib/db.js'
 import fs from 'fs'
 import path from 'path'
 import iconv from 'iconv-lite';
@@ -152,14 +153,14 @@ const getBasePrice = async (bidId) => {
     return res
 }
 
-const getBidFile = async (bidInfo) => {     //특정 공종의 정보가 담겨있는 bidInfo에서 공 내역서가 있다면 공 내역서 파일을 뽑아내는 메소드
-    let ntceSpecDocUrl = 'ntceSpecDocUrl';
-    let ntceSpecFileNm = 'ntceSpecFileNm';
-    let isFindBid = false;
-    let DocUrl = '';
-    let FileName = '';
+const getBidFile = async (bidInfo) => {     //특정 공종의 정보가 담겨있는 bidInfo에서 공 내역서가 있다면 공 내역서 파일을 뽑아내는 메소드 (23.07.08 추가)
+    let ntceSpecDocUrl = 'ntceSpecDocUrl';  //공종 정보 중 파일 다운로드 링크
+    let ntceSpecFileNm = 'ntceSpecFileNm';  //공종 정보 중 파일 이름
+    let isFindBid = false;                  //공종 정보에 공 내역서가 있는지 확인
+    let DocUrl = '';                        //공 내역서 다운로드 링크
+    let FileName = '';                      //공 내역서 파일 이름
 
-    for(let i = 1; i < 11; i++){
+    for(let i = 1; i < 11; i++){            //공 내역서 다운로드 링크가 있는지 확인한다.
         DocUrl = bidInfo[ntceSpecDocUrl + String(i)];
         FileName = bidInfo[ntceSpecFileNm + String(i)];
 
@@ -169,18 +170,37 @@ const getBidFile = async (bidInfo) => {     //특정 공종의 정보가 담겨�
         if(isFindBid)   break;
     }
 
-    if(isFindBid){
-        try{
-            let res = await axios.get(DocUrl, {responseType: 'arraybuffer'})
-            let resData = iconv.decode(res.data, 'utf-8')
+    if(isFindBid){      //공 내역서 다운로드 링크를 찾았다면
+        db.query("select * from emptybid where bidID = ?", [FileName.slice(0, FileName.length - 4)], async (err, result, field) => {        //공 내역서 파일이 이미 있는지 조회한다.
+            if (err) return err;
 
-            console.log(resData);
+            else if (result.length <= 0) {      //없다면
+                try{
+                    let res = await axios.request({     //다운로드 링크로 Request를 보낸다.
+                        method: 'GET',
+                        url: DocUrl,
+                        responseType: 'arraybuffer',
+                        responseEncoding: 'binary'
+                    });
+        
+                    fs.writeFileSync(path.resolve(__dirname, './Uploads/' + FileName), res.data);       //받은 파일을 Uploads 폴더에 저장한다.
 
-            fs.writeFileSync(path.resolve(__dirname, './Uploads/' + FileName), resData);
-        }
-        catch(e){
-            console.log(e);
-        }
+                    db.query("insert into emptybid values (?, ?, ?, ?)", [bidInfo['bidNtceNm'], FileName.slice(0, FileName.length - 4), 'Uploads/' + FileName, res.data.length], (err1, result, field) => {     //DB에 공 내역서 파일 정보를 업데이트한다.
+                        if (err1) return err1;
+                        else {
+                            console.log("공내역서 다운로드 완료");
+                        }
+                    });
+                }
+                catch(e){       //다운로드, File Handling, DB Query 작업 중 문제 발생시 catch
+                    console.log(e);
+                }
+            }
+
+            else {      //이미 DB에 공 내역서가 등록된 경우
+                console.log("이미 등록된 공내역서입니다.");
+            }
+        })
     }
 }
 
@@ -197,7 +217,7 @@ router.get('/:bidId', (req, res) => {
         bidList = JSON.parse(bidList)
         let bidInfo = bidList.filter((bid) => bid.bidNtceNo === req.params.bidId)
 
-        getBidFile(bidInfo[0]);
+        getBidFile(bidInfo[0]);     //공 내역서 파일이 있다면 업로드한다.
 
         getBasePrice(req.params.bidId).then((basePrice) => {
             if (basePrice.data.response.body.items === undefined) {
