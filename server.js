@@ -8,25 +8,32 @@ import dotenv from 'dotenv'
 import cors from 'cors'
 import { router as authRouter } from './router/login/auth.js'
 import { router as postRouter } from './router/post/post.js'
-import { router as createBidRouter } from './router/create_bid/create_bid.js'
+import pkg_create_bid from './router/create_bid/create_bid.cjs';
+const { router: createBidRouter } = pkg_create_bid;
 import { router as dataRouter } from './router/data/data.js'
 import { router as bidListRouter } from './router/created_bid_list/created_bid_list.js'
 import { router as bidInfoRouter } from './router/bidInfo.js'
-const __dirname = path.resolve()
+const __dirname = path.resolve()    // current working directory path
 
 const app = express()
-dotenv.config()
-app.set('port', process.env.PORT || 3001)
+dotenv.config() // load environment file
+app.set('port', process.env.PORT || 8080)
 const FileStore = sessionStore(session)
 
-app.use(morgan('dev'))
-app.use(
-    cors({
-        origin: true,
-        credentials: true,
-    })
-)
-app.use(express.static(path.join(__dirname, '../../React-Project/build'))) //react 프로젝트의 build를 static으로 사용하게 함
+app.use(morgan('dev'));
+
+// env 파일 설정에 따라 CORS 설정 변경
+if (process.env.CORS_ENV == 'development') {
+    app.use(cors({ origin: true, credentials: true }));
+}
+else if (process.env.CORS_ENV == 'production') {
+    app.use(cors({ origin: false, credentials: false }));
+}
+else {
+    app.use(cors({ origin: true, credentials: true }));
+}
+
+app.use(express.static(path.join(__dirname, process.env.STATIC_PATH))) //react 프로젝트의 build를 static으로 사용하게 함
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser(process.env.COOKIE_SECRET))

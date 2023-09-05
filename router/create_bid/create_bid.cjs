@@ -1,18 +1,22 @@
-import express from 'express'
-import pkg_revised from '../../../../Modules/Revised_test/BidHandling_CalculatePrice/execute.js'
-const { execute: execute_revised } = pkg_revised
-import pkg_eligible from '../../../../Modules/Eligible_audit/CMC_Project_EliglbleAudit_Converted/excute.js'
-const { execute: execute_eligible } = pkg_eligible
-import { db } from '../../lib/db.js'
-import fs from 'fs'
-import path from 'path'
+const express = require('express');
 
-const folder_path = path.resolve('') //현재 파일이 속한 폴더의 상위 폴더 위치
-const revised_test_EmptyBid = path.resolve('../../', 'Modules/Revised_test/BidHandling_CalculatePrice/AutoBid/EmptyBid') //간이종심제 입찰서 작성 EmptyBid 폴더 위치
-const eligible_audit_EmptyBid = path.resolve('../../', 'Modules/Eligible_audit/CMC_Project_EliglbleAudit_Converted/AutoBid/EmptyBid') //적격심사 입찰서 작성 EmptyBid 폴더 위치
+// load environment file and set environment variables (CommonJS style)
+require('dotenv').config();
+
+const pkg_revised = require(process.env.REVISED_TEST_PATH + 'execute.js');
+const { execute: execute_revised } = pkg_revised;
+const pkg_eligible = require(process.env.ELIGIBLE_AUDIT_PATH + 'excute.js');
+const { execute: execute_eligible } = pkg_eligible;
+const db = require(process.env.DB_PATH);
+const fs = require('fs');
+const path = require('path');
+
+const folder_path = path.resolve('') // current working directory path
+const revised_test_EmptyBid = path.resolve('../', process.env.REVISED_TEST_EMPTYBID_PATH) //간이종심제 입찰서 작성 EmptyBid 폴더 위치
+const eligible_audit_EmptyBid = path.resolve('../', process.env.ELIGIBLE_AUDIT_EMPTYBID_PATH) //적격심사 입찰서 작성 EmptyBid 폴더 위치
 
 /**입찰서 작성과 관련된 router */
-export const router = express.Router()
+const router = express.Router()
 
 router.post('/revised_test', (req, res, next) => {
     //간이종심제 Bid 만들기
@@ -36,10 +40,7 @@ router.post('/revised_test', (req, res, next) => {
         if (result.length > 0) {
             //찾았다면
             //공내역서를 복사해 작업 폴더로 옳김
-            fs.copyFileSync(
-                folder_path + '\\' + result[0].bidPath,
-                revised_test_EmptyBid + '\\' + bidName + '.BID'
-            )
+            fs.copyFileSync(folder_path + '\\' + result[0].bidPath, revised_test_EmptyBid + '\\' + bidName + '.BID')
 
             console.log('-----------------------------------')
 
@@ -84,9 +85,26 @@ router.post('/revised_test', (req, res, next) => {
             fs.renameSync(
                 revised_test_EmptyBid + '\\' + bidName + '.BID',
                 folder_path +
-                    '\\' +
-                    req.session.nickname +
-                    '\\' +
+                '\\' +
+                req.session.nickname +
+                '\\' +
+                bidName +
+                '\\' +
+                CompanyName +
+                '_' +
+                bidName +
+                '_업평_' +
+                BalancedRate +
+                '_내사정율_' +
+                PersonalRate +
+                '.BID'
+            )
+
+            db.query(
+                'insert into userBidFiles_revised_test (userID, bidID, bidPath, balancedRate, personalRate) value (?, ?, ?, ?, ?)',
+                [
+                    req.session.nickname,
+                    bidName,
                     bidName +
                     '\\' +
                     CompanyName +
@@ -96,24 +114,7 @@ router.post('/revised_test', (req, res, next) => {
                     BalancedRate +
                     '_내사정율_' +
                     PersonalRate +
-                    '.BID'
-            )
-
-            db.query(
-                'insert into userBidFiles_revised_test (userID, bidID, bidPath, balancedRate, personalRate) value (?, ?, ?, ?, ?)',
-                [
-                    req.session.nickname,
-                    bidName,
-                    bidName +
-                        '\\' +
-                        CompanyName +
-                        '_' +
-                        bidName +
-                        '_업평_' +
-                        BalancedRate +
-                        '_내사정율_' +
-                        PersonalRate +
-                        '.BID',
+                    '.BID',
                     BalancedRate,
                     PersonalRate,
                 ],
@@ -197,17 +198,17 @@ router.post('/eligible_audit', (req, res, next) => {
             fs.renameSync(
                 eligible_audit_EmptyBid + '\\' + bidName + '.BID',
                 folder_path +
-                    '\\' +
-                    req.session.nickname +
-                    '\\' +
-                    bidName +
-                    '\\' +
-                    CompanyName +
-                    '_' +
-                    bidName +
-                    '_예가사정율_' +
-                    estimateRating +
-                    '.BID'
+                '\\' +
+                req.session.nickname +
+                '\\' +
+                bidName +
+                '\\' +
+                CompanyName +
+                '_' +
+                bidName +
+                '_예가사정율_' +
+                estimateRating +
+                '.BID'
             )
 
             db.query(
@@ -216,13 +217,13 @@ router.post('/eligible_audit', (req, res, next) => {
                     req.session.nickname,
                     bidName,
                     bidName +
-                        '\\' +
-                        CompanyName +
-                        '_' +
-                        bidName +
-                        '_예가사정율_' +
-                        estimateRating +
-                        '.BID',
+                    '\\' +
+                    CompanyName +
+                    '_' +
+                    bidName +
+                    '_예가사정율_' +
+                    estimateRating +
+                    '.BID',
                     basePrice,
                     estimateRating,
                 ],
@@ -240,3 +241,5 @@ router.post('/eligible_audit', (req, res, next) => {
         }
     })
 })
+
+module.exports = { router: router };
