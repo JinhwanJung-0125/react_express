@@ -47,7 +47,10 @@
 └─Uploads                (입찰용 공내역서 파일)
 ````
 
-
+## 실행 화면
+![123](https://github.com/JinhwanJung-0125/react_express/assets/102853456/3306ff85-a3c9-4233-89a0-f3b369bd8848)
+![789](https://github.com/JinhwanJung-0125/react_express/assets/102853456/40fdabb4-998f-451e-ab42-b4f26b2e4a55)
+![456](https://github.com/JinhwanJung-0125/react_express/assets/102853456/0bf2f39e-5744-46c8-adf7-cf84cd4dfcd8)
 
 
 ## 서버 구성 및 세부 설명 링크
